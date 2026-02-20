@@ -713,27 +713,25 @@
 
   function startRound() {
     const cards = document.getElementById('playersList').querySelectorAll('.player-card');
-    const players = [];
+    const params = new URLSearchParams();
+    let idx = 0;
 
     cards.forEach(card => {
-      const name       = card.querySelector('.player-name-input').value.trim();
+      const name = card.querySelector('.player-name-input').value.trim();
+      if (!name || !playerHasTier(card)) return;
       const activePanel = card.querySelector('.method-panel.active');
-      const multEl     = activePanel ? activePanel.querySelector('.mult-val') : null;
-      const hsEl       = activePanel ? activePanel.querySelector('.hs-val')   : null;
-      const subEl      = activePanel ? activePanel.querySelector('.result-sub') : null;
-      if (!name) return;
-      players.push({
-        name,
-        mult: multEl ? multEl.textContent : '—',
-        hs:   hsEl   ? hsEl.textContent   : '—',
-        tier: subEl  ? subEl.textContent  : '—',
-      });
+      const multEl = activePanel ? activePanel.querySelector('.mult-val') : null;
+      const hsEl   = activePanel ? activePanel.querySelector('.hs-val')   : null;
+      const multRaw = multEl ? multEl.textContent.replace('×', '').trim() : '1.5';
+      const hsRaw   = hsEl   ? hsEl.textContent.replace('+', '').trim()   : '0';
+      params.set('n' + idx, name);
+      params.set('m' + idx, multRaw);
+      params.set('hs' + idx, hsRaw);
+      idx++;
     });
 
-    // Placeholder — scoring page to be built next
-    alert('Round starting with ' + players.length + ' players:\n\n' +
-      players.map(p => `${p.name} · ${p.tier} · ${p.mult} · Head Start: ${p.hs}`).join('\n')
-    );
+    params.set('p', idx);
+    window.location.href = 'scorecard.html?' + params.toString();
   }
 
   // Start with one player card

@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4FORE LEAGUE · Live Scorecard</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1a4a2e;
+    --green-mid: #2d7a4f;
+    --green-bright: #3ddc84;
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --cream: #f5f0e8;
+    --dark: #0d1a12;
+    --red: #c0392b;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--cream);
+    font-family: 'Barlow', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 200;
+    padding: 16px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(13,26,18,0.98);
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    backdrop-filter: blur(8px);
+  }
+
+  .nav-logo {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.6rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--green-bright); }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .nav-round-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.4);
+  }
+
+  .btn-end-round {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(192,57,43,0.6);
+    background: transparent;
+    border: 1px solid rgba(192,57,43,0.25);
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-end-round:hover {
+    color: var(--red);
+    border-color: rgba(192,57,43,0.6);
+    background: rgba(192,57,43,0.08);
+  }
+
+  /* LEADERBOARD */
+  .leaderboard {
+    position: sticky;
+    top: 57px;
+    z-index: 90;
+    background: rgba(13,26,18,0.97);
+    border-bottom: 2px solid rgba(201,168,76,0.15);
+    backdrop-filter: blur(8px);
+    padding: 10px 24px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .leaderboard::-webkit-scrollbar { height: 3px; }
+  .leaderboard::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); }
+
+  .lb-card {
+    background: rgba(45,122,79,0.08);
+    border: 1px solid rgba(201,168,76,0.15);
+    padding: 8px 14px;
+    min-width: 110px;
+    flex-shrink: 0;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .lb-card.rank-1 { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+  .lb-card.rank-2 { border-color: rgba(180,180,180,0.4); }
+  .lb-card.rank-3 { border-color: rgba(61,220,132,0.3); }
+
+  .lb-rank {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+
+  .lb-card.rank-1 .lb-rank { color: var(--gold); }
+  .lb-card.rank-2 .lb-rank { color: rgba(200,200,200,0.6); }
+  .lb-card.rank-3 .lb-rank { color: var(--green-bright); }
+
+  .lb-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--cream);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
+
+  .lb-score {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.2rem;
+    color: var(--gold);
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  .lb-card.rank-1 .lb-score { color: var(--gold-light); font-size: 1.35rem; }
+
+  /* MAIN CONTENT */
+  .page {
+    padding-top: 130px; /* nav + leaderboard */
+    padding-bottom: 80px;
+    max-width: 720px;
+    margin: 0 auto;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  /* HOLE NAVIGATION */
+  .hole-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 16px;
+  }
+
+  .hole-nav-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.4);
+    white-space: nowrap;
+  }
+
+  .btn-nav {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cream);
+    background: rgba(45,122,79,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-nav:hover:not(:disabled) {
+    background: rgba(45,122,79,0.25);
+    border-color: rgba(201,168,76,0.45);
+  }
+
+  .btn-nav:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+
+  /* HOLE PANEL */
+  .hole-panel {
+    background: rgba(45,122,79,0.06);
+    border: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .hole-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .hole-number {
+    font-family: 'Black Ops One', cursive;
+    font-size: 2rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .par-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.35);
+    margin-bottom: 6px;
+  }
+
+  .par-selector {
+    display: flex;
+    gap: 2px;
+  }
+
+  .par-btn {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1rem;
+    color: rgba(245,240,232,0.35);
+    background: rgba(13,26,18,0.7);
+    border: 1px solid rgba(201,168,76,0.15);
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .par-btn:hover { color: rgba(245,240,232,0.7); border-color: rgba(201,168,76,0.35); }
+
+  .par-btn.active {
+    background: var(--gold);
+    color: var(--dark);
+    border-color: var(--gold);
+  }
+
+  /* PLAYER ROWS */
+  .player-scoring-row {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+
+  .player-scoring-row:last-child { border-bottom: none; }
+
+  .player-row-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+
+  .player-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.5);
+  }
+
+  .player-mult-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(245,240,232,0.25);
+    margin-left: 8px;
+  }
+
+  .player-hole-score {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.5rem;
+    color: rgba(245,240,232,0.15);
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .player-hole-score.has-score { color: var(--gold); }
+
+  .inputs-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .input-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.28);
+  }
+
+  .strokes-input {
+    background: rgba(13,26,18,0.85);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--cream);
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.6rem;
+    padding: 10px 14px;
+    width: 80px;
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  .strokes-input::-webkit-outer-spin-button,
+  .strokes-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .strokes-input:focus {
+    border-color: rgba(201,168,76,0.6);
+    background: rgba(45,122,79,0.15);
+  }
+
+  .declaration-select {
+    background: rgba(13,26,18,0.85);
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--cream);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px 12px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    min-width: 180px;
+  }
+
+  .declaration-select:focus { border-color: rgba(201,168,76,0.5); }
+
+  /* HIT / MISS TOGGLE */
+  .hit-miss-wrap {
+    display: flex;
+    gap: 2px;
+  }
+
+  .hit-btn, .miss-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border: 1px solid rgba(201,168,76,0.2);
+    background: rgba(13,26,18,0.7);
+    color: rgba(245,240,232,0.35);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hit-btn:hover  { background: rgba(45,122,79,0.2); color: var(--green-bright); }
+  .miss-btn:hover { background: rgba(192,57,43,0.15); color: var(--red); }
+
+  .hit-btn.active  { background: var(--green-mid); color: var(--cream); border-color: var(--green-mid); }
+  .miss-btn.active { background: var(--red); color: var(--white); border-color: var(--red); }
+
+  /* MOMENT BUTTONS */
+  .moments-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .moment-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid rgba(61,220,132,0.2);
+    color: rgba(61,220,132,0.4);
+    background: transparent;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .moment-btn:hover {
+    border-color: rgba(61,220,132,0.5);
+    color: rgba(61,220,132,0.8);
+    background: rgba(61,220,132,0.06);
+  }
+
+  .moment-btn.active {
+    background: rgba(61,220,132,0.12);
+    border-color: var(--green-bright);
+    color: var(--green-bright);
+  }
+
+  .moment-btn[data-moment="hio"] {
+    border-color: rgba(201,168,76,0.3);
+    color: rgba(201,168,76,0.5);
+  }
+  .moment-btn[data-moment="hio"]:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+  .moment-btn[data-moment="hio"].active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.15); }
+
+  /* HOLE PROGRESS BAR */
+  .hole-progress {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 16px;
+  }
+
+  .hole-pip {
+    flex: 1;
+    height: 3px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 2px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+
+  .hole-pip.current { background: var(--gold); }
+  .hole-pip.scored  { background: rgba(61,220,132,0.5); }
+
+  /* NO PLAYERS STATE */
+  .no-players {
+    text-align: center;
+    padding: 80px 24px;
+  }
+
+  .no-players h2 {
+    font-family: 'Black Ops One', cursive;
+    font-size: 2rem;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+
+  .no-players p {
+    color: rgba(245,240,232,0.5);
+    margin-bottom: 32px;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: var(--dark);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 16px 40px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    nav { padding: 14px 20px; }
+    .page { padding-left: 16px; padding-right: 16px; }
+    .leaderboard { padding: 8px 16px; }
+    .hole-header { padding: 14px 16px; }
+    .player-scoring-row { padding: 16px; }
+    .inputs-row { gap: 6px; }
+    .strokes-input { width: 68px; font-size: 1.3rem; }
+    .declaration-select { min-width: 0; flex: 1; }
+    .btn-nav { padding: 10px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">4<span>FORE</span></a>
+  <div class="nav-right">
+    <span class="nav-round-label" id="navRoundLabel">Live Round</span>
+    <a href="round.html" class="btn-end-round">End Round</a>
+  </div>
+</nav>
+
+<!-- LEADERBOARD -->
+<div class="leaderboard" id="leaderboard"></div>
+
+<!-- PAGE -->
+<div class="page" id="mainPage">
+  <!-- HOLE PROGRESS PIPS -->
+  <div class="hole-progress" id="holePips"></div>
+
+  <!-- HOLE NAVIGATION -->
+  <div class="hole-nav">
+    <button class="btn-nav" id="prevBtn" disabled>← Prev</button>
+    <span class="hole-nav-label" id="holeNavLabel">Hole 1 of 18</span>
+    <button class="btn-nav" id="nextBtn">Next →</button>
+  </div>
+
+  <!-- HOLE PANEL (rebuilt per hole) -->
+  <div class="hole-panel" id="holeView"></div>
+</div>
+
+<script>
+  // ── Parse URL params ──────────────────────────────────────────────
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerCount = parseInt(urlParams.get('p')) || 0;
+
+  const players = [];
+  for (let i = 0; i < playerCount; i++) {
+    players.push({
+      name: urlParams.get('n' + i) || 'Player ' + (i + 1),
+      mult: parseFloat(urlParams.get('m' + i)) || 1.5,
+      hs:   parseInt(urlParams.get('hs' + i))  || 0,
+    });
+  }
+
+  // ── State ─────────────────────────────────────────────────────────
+  let currentHole = 0;
+
+  const holeData = Array.from({ length: 18 }, () => ({
+    par: 4,
+    players: players.map(() => ({
+      strokes:     null,
+      declaration: 'none',
+      hit:         null,
+      moments: { hio: false, sand: false, chip: false, pap: false }
+    }))
+  }));
+
+  // ── Scoring logic ─────────────────────────────────────────────────
+  function basePoints(strokes, par) {
+    const diff = strokes - par;
+    if (diff <= -3) return 10;
+    if (diff === -2) return 6;
+    if (diff === -1) return 4;
+    if (diff === 0)  return 2;
+    if (diff === 1)  return 1;
+    return 0;
+  }
+
+  function holeScore(holeIdx, playerIdx) {
+    const h  = holeData[holeIdx];
+    const pd = h.players[playerIdx];
+    const p  = players[playerIdx];
+    if (pd.strokes === null) return null;
+
+    let pts = basePoints(pd.strokes, h.par);
+
+    if (pd.declaration !== 'none') {
+      if (pd.hit === true)  pts = pts * p.mult;
+      else if (pd.hit === false) pts = pts + 0.5;
+      // hit === null means declared but not yet marked — no multiplier yet
+    }
+
+    if (pd.moments.hio)  pts += 44;
+    if (pd.moments.sand) pts += 3;
+    if (pd.moments.chip) pts += 2;
+    if (pd.moments.pap)  pts += 2;
+
+    return Math.round(pts * 10) / 10;
+  }
+
+  function totalScore(playerIdx) {
+    let total = players[playerIdx].hs;
+    for (let h = 0; h < 18; h++) {
+      const s = holeScore(h, playerIdx);
+      if (s !== null) total += s;
+    }
+    return Math.round(total * 10) / 10;
+  }
+
+  function holeHasAnyScore(holeIdx) {
+    return holeData[holeIdx].players.some(pd => pd.strokes !== null);
+  }
+
+  // ── Declarations available per par ────────────────────────────────
+  const ALL_DECLARATIONS = [
+    { value: 'none',     label: 'No Declaration' },
+    { value: 'dtg',      label: 'Drive the Green' },
+    { value: 'gfg2',     label: 'Go for Green in 2' },
+    { value: 'shortcut', label: 'Short Cut' },
+    { value: '1putt',    label: '1-Putt Par' },
+    { value: 'cys',      label: 'Call Your Score' },
+  ];
+
+  function declarationsForPar(par) {
+    return ALL_DECLARATIONS.filter(d => {
+      if (d.value === 'dtg')  return par === 4;
+      if (d.value === 'gfg2') return par === 5;
+      return true;
+    });
+  }
+
+  // ── Render leaderboard ────────────────────────────────────────────
+  function renderLeaderboard() {
+    const lb = document.getElementById('leaderboard');
+
+    if (players.length === 0) { lb.innerHTML = ''; return; }
+
+    const scores = players.map((p, i) => ({
+      name: p.name,
+      total: totalScore(i),
+      idx: i
+    })).sort((a, b) => b.total - a.total);
+
+    // Assign ranks
+    let rank = 1;
+    scores.forEach((s, i) => {
+      if (i > 0 && s.total < scores[i - 1].total) rank = i + 1;
+      s.rank = rank;
+    });
+
+    const rankLabels = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH'];
+
+    lb.innerHTML = scores.map(s => `
+      <div class="lb-card rank-${Math.min(s.rank, 4)}">
+        <div class="lb-rank">${rankLabels[s.rank - 1] || s.rank + 'TH'}</div>
+        <div class="lb-name">${escHtml(s.name)}</div>
+        <div class="lb-score">${s.total}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Render hole progress pips ─────────────────────────────────────
+  function renderPips() {
+    const container = document.getElementById('holePips');
+    container.innerHTML = Array.from({ length: 18 }, (_, i) => {
+      let cls = 'hole-pip';
+      if (i === currentHole) cls += ' current';
+      else if (holeHasAnyScore(i)) cls += ' scored';
+      return `<div class="${cls}" onclick="goHole(${i})" title="Hole ${i + 1}"></div>`;
+    }).join('');
+  }
+
+  // ── Render hole view ──────────────────────────────────────────────
+  function renderHole(holeIdx) {
+    const h = holeData[holeIdx];
+    const decls = declarationsForPar(h.par);
+    const holeView = document.getElementById('holeView');
+
+    // Par selector
+    const parBtns = [3, 4, 5].map(p =>
+      `<button class="par-btn${h.par === p ? ' active' : ''}" data-par="${p}">${p}</button>`
+    ).join('');
+
+    // Player rows
+    const playerRows = players.map((player, pi) => {
+      const pd = h.players[pi];
+
+      // Declaration options
+      const declOptions = decls.map(d =>
+        `<option value="${d.value}"${pd.declaration === d.value ? ' selected' : ''}>${d.label}</option>`
+      ).join('');
+
+      const declNotNone = pd.declaration !== 'none';
+      const hitMissHidden = declNotNone ? '' : 'style="display:none"';
+      const hitActive  = pd.hit === true  ? ' active' : '';
+      const missActive = pd.hit === false ? ' active' : '';
+
+      // Moment buttons
+      const momentBtns = [
+        { key: 'hio',  label: '⛳ Hole in One +44' },
+        { key: 'sand', label: '🏖 Sand Save +3' },
+        { key: 'chip', label: '⛳ Chip-In +2' },
+        { key: 'pap',  label: '⚠ Par After Penalty +2' },
+      ].map(m =>
+        `<button class="moment-btn${pd.moments[m.key] ? ' active' : ''}" data-player="${pi}" data-moment="${m.key}">${m.label}</button>`
+      ).join('');
+
+      const score = holeScore(holeIdx, pi);
+      const scoreDisplay = score !== null ? score + ' pts' : '—';
+      const scoreClass = score !== null ? ' has-score' : '';
+
+      const multLabel = player.mult === 1 ? 'Scratch' : player.mult + '×';
+
+      return `
+        <div class="player-scoring-row">
+          <div class="player-row-header">
+            <div>
+              <span class="player-label">${escHtml(player.name)}</span>
+              <span class="player-mult-label">${multLabel}</span>
+            </div>
+            <span class="player-hole-score${scoreClass}" id="hole-score-${holeIdx}-${pi}">${scoreDisplay}</span>
+          </div>
+          <div class="inputs-row">
+            <div class="input-group">
+              <span class="input-label">Strokes</span>
+              <input
+                class="strokes-input"
+                type="number"
+                min="1" max="15"
+                placeholder="—"
+                value="${pd.strokes !== null ? pd.strokes : ''}"
+                data-player="${pi}"
+                data-hole="${holeIdx}"
+              />
+            </div>
+            <div class="input-group">
+              <span class="input-label">Declaration</span>
+              <select class="declaration-select" data-player="${pi}" data-hole="${holeIdx}">
+                ${declOptions}
+              </select>
+            </div>
+            <div class="input-group hit-miss-wrap" data-hm-player="${pi}" ${hitMissHidden}>
+              <span class="input-label">Hit?</span>
+              <div style="display:flex;gap:2px;">
+                <button class="hit-btn${hitActive}"  data-player="${pi}" data-hm="hit">HIT</button>
+                <button class="miss-btn${missActive}" data-player="${pi}" data-hm="miss">MISS</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments-row">${momentBtns}</div>
+        </div>
+      `;
+    }).join('');
+
+    holeView.innerHTML = `
+      <div class="hole-header">
+        <span class="hole-number">HOLE ${holeIdx + 1}</span>
+        <div>
+          <div class="par-label">Par</div>
+          <div class="par-selector">${parBtns}</div>
+        </div>
+      </div>
+      ${playerRows}
+    `;
+
+    // Update nav
+    document.getElementById('holeNavLabel').textContent = `Hole ${holeIdx + 1} of 18`;
+    document.getElementById('prevBtn').disabled = holeIdx === 0;
+    document.getElementById('nextBtn').disabled = holeIdx === 17;
+    renderPips();
+  }
+
+  // ── Navigate holes ────────────────────────────────────────────────
+  function goHole(idx) {
+    if (idx < 0 || idx > 17) return;
+    currentHole = idx;
+    renderHole(currentHole);
+    renderLeaderboard();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Update a single hole score display ────────────────────────────
+  function updateHoleScoreDisplay(holeIdx, playerIdx) {
+    const el = document.getElementById(`hole-score-${holeIdx}-${playerIdx}`);
+    if (!el) return;
+    const score = holeScore(holeIdx, playerIdx);
+    if (score !== null) {
+      el.textContent = score + ' pts';
+      el.classList.add('has-score');
+    } else {
+      el.textContent = '—';
+      el.classList.remove('has-score');
+    }
+  }
+
+  // ── Event delegation on holeView ─────────────────────────────────
+  document.getElementById('holeView').addEventListener('input', e => {
+    if (!e.target.classList.contains('strokes-input')) return;
+    const pi  = parseInt(e.target.dataset.player);
+    const val = parseInt(e.target.value);
+    holeData[currentHole].players[pi].strokes = isNaN(val) || val < 1 ? null : val;
+    updateHoleScoreDisplay(currentHole, pi);
+    renderLeaderboard();
+    renderPips();
+  });
+
+  document.getElementById('holeView').addEventListener('change', e => {
+    if (!e.target.classList.contains('declaration-select')) return;
+    const pi  = parseInt(e.target.dataset.player);
+    const val = e.target.value;
+    holeData[currentHole].players[pi].declaration = val;
+    // Reset hit if switching to none
+    if (val === 'none') holeData[currentHole].players[pi].hit = null;
+    // Show/hide hit-miss
+    const hmWrap = document.querySelector(`.hit-miss-wrap[data-hm-player="${pi}"]`);
+    if (hmWrap) hmWrap.style.display = val === 'none' ? 'none' : '';
+    updateHoleScoreDisplay(currentHole, pi);
+    renderLeaderboard();
+  });
+
+  document.getElementById('holeView').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    // Par selector
+    if (btn.classList.contains('par-btn')) {
+      const newPar = parseInt(btn.dataset.par);
+      holeData[currentHole].par = newPar;
+      // Reset declarations that are no longer valid
+      const validDecls = declarationsForPar(newPar).map(d => d.value);
+      holeData[currentHole].players.forEach(pd => {
+        if (!validDecls.includes(pd.declaration)) {
+          pd.declaration = 'none';
+          pd.hit = null;
+        }
+      });
+      renderHole(currentHole);
+      renderLeaderboard();
+      return;
+    }
+
+    // Hit / Miss
+    if (btn.dataset.hm) {
+      const pi  = parseInt(btn.dataset.player);
+      const isHit = btn.dataset.hm === 'hit';
+      // Toggle off if already active
+      const current = holeData[currentHole].players[pi].hit;
+      if ((isHit && current === true) || (!isHit && current === false)) {
+        holeData[currentHole].players[pi].hit = null;
+        btn.classList.remove('active');
+      } else {
+        holeData[currentHole].players[pi].hit = isHit;
+        // Update button styles
+        const hmWrap = document.querySelector(`.hit-miss-wrap[data-hm-player="${pi}"]`);
+        if (hmWrap) {
+          hmWrap.querySelector('.hit-btn').classList.toggle('active', isHit);
+          hmWrap.querySelector('.miss-btn').classList.toggle('active', !isHit);
+        }
+      }
+      updateHoleScoreDisplay(currentHole, pi);
+      renderLeaderboard();
+      return;
+    }
+
+    // Moment bonus
+    if (btn.classList.contains('moment-btn')) {
+      const pi = parseInt(btn.dataset.player);
+      const m  = btn.dataset.moment;
+      holeData[currentHole].players[pi].moments[m] = !holeData[currentHole].players[pi].moments[m];
+      btn.classList.toggle('active');
+      updateHoleScoreDisplay(currentHole, pi);
+      renderLeaderboard();
+      return;
+    }
+
+    // Navigation
+    if (btn.id === 'prevBtn') { goHole(currentHole - 1); return; }
+    if (btn.id === 'nextBtn') { goHole(currentHole + 1); return; }
+  });
+
+  // ── Utility ───────────────────────────────────────────────────────
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────
+  if (players.length === 0) {
+    document.getElementById('mainPage').innerHTML = `
+      <div class="no-players">
+        <h2>No Players Found</h2>
+        <p>Start a round from the player setup page to load player data.</p>
+        <a href="round.html" class="btn-primary">Set Up Round</a>
+      </div>
+    `;
+    document.getElementById('leaderboard').innerHTML = '';
+  } else {
+    document.getElementById('navRoundLabel').textContent =
+      players.map(p => p.name.split(' ')[0]).join(' · ');
+    renderHole(0);
+    renderLeaderboard();
+  }
+</script>
+
+</body>
+</html>
