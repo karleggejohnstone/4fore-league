@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4FORE LEAGUE · Start a Round</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1a4a2e;
+    --green-mid: #2d7a4f;
+    --green-bright: #3ddc84;
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --cream: #f5f0e8;
+    --dark: #0d1a12;
+    --red: #c0392b;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--cream);
+    font-family: 'Barlow', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* NOISE TEXTURE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+    padding: 20px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to bottom, rgba(13,26,18,0.97), rgba(13,26,18,0.85));
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .nav-logo {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.8rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--green-bright); }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cream);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+  }
+
+  .nav-links a:hover { opacity: 1; color: var(--gold); }
+  .nav-links a.active { opacity: 1; color: var(--gold); }
+
+  /* PAGE WRAPPER */
+  .page {
+    padding: 120px 48px 80px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* PAGE HEADER */
+  .page-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-bright);
+    margin-bottom: 12px;
+  }
+
+  .page-title {
+    font-family: 'Black Ops One', cursive;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .page-subtitle {
+    font-size: 1rem;
+    color: rgba(245,240,232,0.6);
+    line-height: 1.6;
+    max-width: 480px;
+    margin-bottom: 56px;
+  }
+
+  /* PLAYERS SECTION */
+  .players-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .players-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--green-bright);
+  }
+
+  .player-count {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(245,240,232,0.35);
+    letter-spacing: 0.1em;
+  }
+
+  /* PLAYER ROWS */
+  .players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 12px;
+  }
+
+  .player-row {
+    display: grid;
+    grid-template-columns: 1fr 140px auto;
+    gap: 2px;
+    align-items: stretch;
+    animation: slideIn 0.25s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .player-row input {
+    background: rgba(45,122,79,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--cream);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 16px 20px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    width: 100%;
+  }
+
+  .player-row input::placeholder {
+    color: rgba(245,240,232,0.2);
+    font-weight: 400;
+  }
+
+  .player-row input:focus {
+    border-color: rgba(201,168,76,0.5);
+    background: rgba(45,122,79,0.18);
+  }
+
+  .player-row input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  .player-row input[type="number"]::-webkit-outer-spin-button,
+  .player-row input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .player-info {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .tier-badge {
+    background: rgba(13,26,18,0.9);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-left: none;
+    padding: 0 16px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 140px;
+    gap: 2px;
+  }
+
+  .tier-badge .tier-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    line-height: 1;
+  }
+
+  .tier-badge .tier-mult {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.2rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .tier-badge.tier-low .tier-mult { color: var(--green-bright); }
+  .tier-badge.tier-mid .tier-mult { color: var(--gold); }
+  .tier-badge.tier-high .tier-mult { color: var(--gold-light); }
+  .tier-badge.tier-empty .tier-mult { color: rgba(245,240,232,0.15); font-family: 'Barlow Condensed'; font-size: 0.85rem; font-weight: 600; }
+
+  .head-start-badge {
+    background: rgba(13,26,18,0.9);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-left: none;
+    padding: 0 16px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .head-start-badge .hs-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .head-start-badge .hs-value {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.2rem;
+    color: var(--cream);
+    line-height: 1;
+  }
+
+  .head-start-badge.hs-empty .hs-value {
+    font-family: 'Barlow Condensed';
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(245,240,232,0.15);
+  }
+
+  .player-row-inner {
+    display: contents;
+  }
+
+  .player-fields {
+    display: grid;
+    grid-template-columns: 1fr 100px;
+    gap: 2px;
+  }
+
+  .player-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+
+  .remove-btn {
+    background: rgba(192,57,43,0.12);
+    border: 1px solid rgba(192,57,43,0.2);
+    color: rgba(192,57,43,0.5);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 16px;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .remove-btn:hover {
+    background: rgba(192,57,43,0.25);
+    color: var(--red);
+    border-color: rgba(192,57,43,0.5);
+  }
+
+  /* PLAYER ROW LAYOUT (full row) */
+  .player-entry {
+    display: grid;
+    grid-template-columns: 1fr 100px 130px 110px 48px;
+    gap: 2px;
+    animation: slideIn 0.25s ease-out;
+  }
+
+  .player-entry input {
+    background: rgba(45,122,79,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--cream);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 16px 20px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    width: 100%;
+  }
+
+  .player-entry input::placeholder {
+    color: rgba(245,240,232,0.2);
+    font-weight: 400;
+  }
+
+  .player-entry input:focus {
+    border-color: rgba(201,168,76,0.5);
+    background: rgba(45,122,79,0.18);
+  }
+
+  .player-entry input[type="number"] {
+    -moz-appearance: textfield;
+    text-align: center;
+  }
+
+  .player-entry input[type="number"]::-webkit-outer-spin-button,
+  .player-entry input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .player-entry .cell-tier {
+    background: rgba(13,26,18,0.9);
+    border: 1px solid rgba(201,168,76,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 14px;
+    gap: 2px;
+  }
+
+  .player-entry .cell-tier .tier-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    line-height: 1;
+  }
+
+  .player-entry .cell-tier .tier-mult {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .player-entry .cell-tier.tier-low .tier-mult { color: var(--green-bright); }
+  .player-entry .cell-tier.tier-mid .tier-mult { color: var(--gold); }
+  .player-entry .cell-tier.tier-high .tier-mult { color: var(--gold-light); }
+  .player-entry .cell-tier.tier-empty .tier-mult {
+    font-family: 'Barlow Condensed';
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(245,240,232,0.15);
+  }
+
+  .player-entry .cell-hs {
+    background: rgba(13,26,18,0.9);
+    border: 1px solid rgba(201,168,76,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 14px;
+    gap: 2px;
+  }
+
+  .player-entry .cell-hs .hs-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .player-entry .cell-hs .hs-value {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.15rem;
+    color: var(--cream);
+    line-height: 1;
+  }
+
+  .player-entry .cell-hs.hs-empty .hs-value {
+    font-family: 'Barlow Condensed';
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(245,240,232,0.15);
+  }
+
+  .player-entry .cell-remove {
+    background: rgba(192,57,43,0.08);
+    border: 1px solid rgba(192,57,43,0.15);
+    color: rgba(192,57,43,0.4);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .player-entry .cell-remove:hover {
+    background: rgba(192,57,43,0.2);
+    color: var(--red);
+    border-color: rgba(192,57,43,0.4);
+  }
+
+  /* COLUMN HEADERS */
+  .column-headers {
+    display: grid;
+    grid-template-columns: 1fr 100px 130px 110px 48px;
+    gap: 2px;
+    margin-bottom: 6px;
+  }
+
+  .col-header {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    padding: 0 4px;
+  }
+
+  /* ADD PLAYER BUTTON */
+  .btn-add {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed rgba(201,168,76,0.25);
+    color: var(--gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  .btn-add:hover:not(:disabled) {
+    background: rgba(201,168,76,0.07);
+    border-color: rgba(201,168,76,0.5);
+  }
+
+  .btn-add:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .btn-add .plus {
+    font-size: 1.2rem;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  /* START ROUND BUTTON */
+  .start-section {
+    margin-top: 48px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .btn-start {
+    background: var(--gold);
+    color: var(--dark);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 20px 56px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, opacity 0.2s;
+    clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+  }
+
+  .btn-start:hover:not(:disabled) {
+    background: var(--gold-light);
+    transform: translateY(-2px);
+  }
+
+  .btn-start:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .start-hint {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(245,240,232,0.35);
+    letter-spacing: 0.05em;
+  }
+
+  /* TIER REFERENCE */
+  .tier-ref {
+    margin-top: 56px;
+    padding-top: 40px;
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .tier-ref-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.3);
+    margin-bottom: 16px;
+  }
+
+  .tier-ref-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .tier-ref-item {
+    background: rgba(13,26,18,0.6);
+    border: 1px solid rgba(201,168,76,0.1);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tier-ref-item .ref-range {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(245,240,232,0.5);
+  }
+
+  .tier-ref-item .ref-mult {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.2rem;
+  }
+
+  .tier-ref-item.low .ref-mult { color: var(--green-bright); }
+  .tier-ref-item.mid .ref-mult { color: var(--gold); }
+  .tier-ref-item.high .ref-mult { color: var(--gold-light); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    .page { padding: 100px 24px 60px; }
+    .column-headers { grid-template-columns: 1fr 80px 110px 90px 40px; }
+    .player-entry { grid-template-columns: 1fr 80px 110px 90px 40px; }
+    .tier-ref-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 520px) {
+    .column-headers { grid-template-columns: 1fr 72px 100px 48px; }
+    .player-entry { grid-template-columns: 1fr 72px 100px 48px; }
+    .col-header-hs { display: none; }
+    .cell-hs { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">4<span>FORE</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+    <li><a href="index.html#scoring">Scoring</a></li>
+    <li><a href="index.html#declarations">Declarations</a></li>
+    <li><a href="index.html#moments">Moments</a></li>
+    <li><a href="index.html#scorecard">Scorecard</a></li>
+    <li><a href="round.html" class="active">Start Round</a></li>
+  </ul>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+  <p class="page-eyebrow">4Fore League</p>
+  <h1 class="page-title">Start a Round</h1>
+  <p class="page-subtitle">Add up to 6 players. Enter each player's handicap to set their multiplier tier and head start points.</p>
+
+  <!-- COLUMN HEADERS -->
+  <div class="column-headers">
+    <div class="col-header">Player Name</div>
+    <div class="col-header">Handicap</div>
+    <div class="col-header">Tier · Multiplier</div>
+    <div class="col-header col-header-hs">Head Start</div>
+    <div class="col-header"></div>
+  </div>
+
+  <!-- PLAYERS LIST -->
+  <div id="playersList" class="players-list"></div>
+
+  <!-- ADD PLAYER BUTTON -->
+  <button class="btn-add" id="addPlayerBtn" onclick="addPlayer()">
+    <span class="plus">+</span> Add Player
+  </button>
+
+  <!-- START ROUND -->
+  <div class="start-section">
+    <button class="btn-start" id="startRoundBtn" disabled onclick="startRound()">Start Round</button>
+    <p class="start-hint" id="startHint">Add at least 2 players to begin</p>
+  </div>
+
+  <!-- TIER REFERENCE -->
+  <div class="tier-ref">
+    <p class="tier-ref-label">Handicap Multiplier Reference</p>
+    <div class="tier-ref-grid">
+      <div class="tier-ref-item low">
+        <span class="ref-range">Scratch – 6 &nbsp;·&nbsp; Low</span>
+        <span class="ref-mult">1.5×</span>
+      </div>
+      <div class="tier-ref-item mid">
+        <span class="ref-range">7 – 13 &nbsp;·&nbsp; Mid</span>
+        <span class="ref-mult">1.75×</span>
+      </div>
+      <div class="tier-ref-item high">
+        <span class="ref-range">14+ &nbsp;·&nbsp; High</span>
+        <span class="ref-mult">2.0×</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let playerCount = 0;
+  const MAX_PLAYERS = 6;
+
+  function getTierInfo(handicap) {
+    if (handicap === '' || handicap === null || isNaN(handicap)) {
+      return { tierClass: 'tier-empty', tierName: '', mult: '—' };
+    }
+    const h = parseInt(handicap, 10);
+    if (h <= 6) return { tierClass: 'tier-low', tierName: 'Low · Scratch–6', mult: '1.5×' };
+    if (h <= 13) return { tierClass: 'tier-mid', tierName: 'Mid · 7–13', mult: '1.75×' };
+    return { tierClass: 'tier-high', tierName: 'High · 14+', mult: '2.0×' };
+  }
+
+  function getHeadStart(handicap) {
+    if (handicap === '' || handicap === null || isNaN(handicap)) return null;
+    const h = parseInt(handicap, 10);
+    if (h < 0) return null;
+    return Math.floor(h / 2);
+  }
+
+  function updateRow(id, handicapVal) {
+    const tier = getTierInfo(handicapVal);
+    const hs = getHeadStart(handicapVal);
+
+    const tierCell = document.getElementById('tier-' + id);
+    const hsCell = document.getElementById('hs-' + id);
+
+    // Update tier cell
+    tierCell.className = 'cell-tier ' + tier.tierClass;
+    tierCell.innerHTML = tier.tierClass === 'tier-empty'
+      ? `<span class="tier-name">Tier</span><span class="tier-mult">—</span>`
+      : `<span class="tier-name">${tier.tierName}</span><span class="tier-mult">${tier.mult}</span>`;
+
+    // Update head start cell
+    if (hs === null) {
+      hsCell.className = 'cell-hs hs-empty';
+      hsCell.innerHTML = `<span class="hs-label">Head Start</span><span class="hs-value">—</span>`;
+    } else {
+      hsCell.className = 'cell-hs';
+      hsCell.innerHTML = `<span class="hs-label">Head Start</span><span class="hs-value">+${hs}</span>`;
+    }
+
+    updateStartButton();
+  }
+
+  function addPlayer() {
+    if (playerCount >= MAX_PLAYERS) return;
+    playerCount++;
+    const id = Date.now();
+
+    const entry = document.createElement('div');
+    entry.className = 'player-entry';
+    entry.id = 'player-' + id;
+
+    entry.innerHTML = `
+      <input
+        type="text"
+        placeholder="Player ${playerCount} name"
+        oninput="updateStartButton()"
+        aria-label="Player name"
+      />
+      <input
+        type="number"
+        placeholder="HCP"
+        min="0"
+        max="54"
+        oninput="updateRow(${id}, this.value)"
+        aria-label="Handicap"
+      />
+      <div class="cell-tier tier-empty" id="tier-${id}">
+        <span class="tier-name">Tier</span>
+        <span class="tier-mult">—</span>
+      </div>
+      <div class="cell-hs hs-empty" id="hs-${id}">
+        <span class="hs-label">Head Start</span>
+        <span class="hs-value">—</span>
+      </div>
+      <button class="cell-remove" onclick="removePlayer('player-${id}')" aria-label="Remove player">✕</button>
+    `;
+
+    document.getElementById('playersList').appendChild(entry);
+    updateAddButton();
+    updateStartButton();
+
+    // Focus the name field
+    entry.querySelector('input[type="text"]').focus();
+  }
+
+  function removePlayer(playerId) {
+    const el = document.getElementById(playerId);
+    if (el) {
+      el.style.animation = 'none';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-6px)';
+      el.style.transition = 'opacity 0.15s, transform 0.15s';
+      setTimeout(() => {
+        el.remove();
+        playerCount--;
+        updateAddButton();
+        updateStartButton();
+      }, 150);
+    }
+  }
+
+  function updateAddButton() {
+    const btn = document.getElementById('addPlayerBtn');
+    const current = document.getElementById('playersList').children.length;
+    btn.disabled = current >= MAX_PLAYERS;
+    if (current >= MAX_PLAYERS) {
+      btn.querySelector('.plus').textContent = '✓';
+      btn.childNodes[1].textContent = ' Max Players Reached (6)';
+    } else {
+      btn.querySelector('.plus').textContent = '+';
+      btn.childNodes[1].textContent = ' Add Player';
+    }
+  }
+
+  function updateStartButton() {
+    const rows = document.getElementById('playersList').querySelectorAll('.player-entry');
+    const btn = document.getElementById('startRoundBtn');
+    const hint = document.getElementById('startHint');
+
+    const filledPlayers = Array.from(rows).filter(row => {
+      const nameInput = row.querySelector('input[type="text"]');
+      return nameInput && nameInput.value.trim().length > 0;
+    });
+
+    const count = filledPlayers.length;
+    btn.disabled = count < 2;
+
+    if (count === 0) {
+      hint.textContent = 'Add at least 2 players to begin';
+    } else if (count === 1) {
+      hint.textContent = 'Add one more player to begin';
+    } else {
+      hint.textContent = `${count} player${count > 1 ? 's' : ''} ready`;
+    }
+  }
+
+  function startRound() {
+    const rows = document.getElementById('playersList').querySelectorAll('.player-entry');
+    const players = [];
+
+    rows.forEach(row => {
+      const nameInput = row.querySelector('input[type="text"]');
+      const hcpInput = row.querySelector('input[type="number"]');
+      const name = nameInput ? nameInput.value.trim() : '';
+      const hcp = hcpInput ? hcpInput.value : '';
+
+      if (name) {
+        const tier = getTierInfo(hcp);
+        const hs = getHeadStart(hcp);
+        players.push({ name, handicap: hcp, tier: tier.mult, headStart: hs });
+      }
+    });
+
+    // Placeholder — scoring page to be built next
+    alert(`Round starting with ${players.length} players:\n\n` +
+      players.map(p =>
+        `${p.name} · HCP ${p.handicap || '—'} · ${p.tier} · Head Start: +${p.headStart ?? 0}`
+      ).join('\n')
+    );
+  }
+
+  // Start with one player row ready
+  addPlayer();
+</script>
+
+</body>
+</html>
