@@ -882,10 +882,11 @@
       return;
     }
 
-    // Navigation
-    if (btn.id === 'prevBtn') { goHole(currentHole - 1); return; }
-    if (btn.id === 'nextBtn') { goHole(currentHole + 1); return; }
   });
+
+  // ── Navigation buttons (outside holeView, need separate listeners) ─
+  document.getElementById('prevBtn').addEventListener('click', () => goHole(currentHole - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => goHole(currentHole + 1));
 
   // ── Utility ───────────────────────────────────────────────────────
   function escHtml(str) {
