@@ -503,6 +503,161 @@
     clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
   }
 
+  /* VIEW TOGGLE */
+  .view-toggle {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 20px;
+  }
+
+  .toggle-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: 1px solid rgba(201,168,76,0.2);
+    background: transparent;
+    color: rgba(245,240,232,0.4);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .toggle-btn.active {
+    background: rgba(201,168,76,0.12);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .toggle-btn:hover:not(.active) {
+    color: rgba(245,240,232,0.75);
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  /* FULL SCORECARD TABLE */
+  .full-scorecard-wrap {
+    display: none;
+    overflow-x: auto;
+  }
+
+  .full-scorecard-wrap.visible { display: block; }
+
+  .full-scorecard-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 560px;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .full-scorecard-table thead th {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 10px 12px;
+    background: rgba(13,26,18,0.95);
+    border-bottom: 2px solid rgba(201,168,76,0.25);
+    white-space: nowrap;
+    text-align: left;
+  }
+
+  .full-scorecard-table thead th.player-col {
+    border-left: 1px solid rgba(201,168,76,0.12);
+    text-align: center;
+  }
+
+  .full-scorecard-table tbody tr {
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .full-scorecard-table tbody tr:hover td { background: rgba(45,122,79,0.18); }
+
+  .full-scorecard-table tbody tr.hole-current td {
+    background: rgba(201,168,76,0.08);
+    border-top: 1px solid rgba(201,168,76,0.3);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .full-scorecard-table tbody tr.hole-unplayed td { opacity: 0.35; }
+
+  .full-scorecard-table td {
+    padding: 9px 12px;
+    font-size: 0.88rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .full-scorecard-table td.player-col {
+    border-left: 1px solid rgba(201,168,76,0.08);
+    text-align: center;
+  }
+
+  .sc-hole-num {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1rem;
+    color: var(--gold);
+  }
+
+  .sc-par { color: rgba(245,240,232,0.45); font-size: 0.8rem; }
+
+  .sc-pts {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1rem;
+    color: var(--gold);
+  }
+
+  .sc-score-detail {
+    font-size: 0.72rem;
+    color: rgba(245,240,232,0.4);
+    line-height: 1.3;
+  }
+
+  .sc-hit  { color: var(--green-bright); font-weight: 700; }
+  .sc-miss { color: var(--red); font-weight: 700; }
+  .sc-moments { font-size: 0.7rem; color: rgba(201,168,76,0.7); }
+
+  /* TOTALS ROW */
+  .full-scorecard-table tfoot tr td {
+    background: rgba(13,26,18,0.9);
+    border-top: 2px solid rgba(201,168,76,0.3);
+    font-weight: 700;
+  }
+
+  .tfoot-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.35);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .tfoot-val {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1rem;
+    color: var(--gold-light);
+    display: block;
+  }
+
+  .tfoot-total {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.4rem;
+    color: var(--gold-light);
+  }
+
+  .tfoot-breakdown {
+    font-size: 0.7rem;
+    color: rgba(245,240,232,0.35);
+    line-height: 1.6;
+    margin-top: 3px;
+  }
+
   /* RESPONSIVE */
   @media (max-width: 640px) {
     nav { padding: 14px 20px; }
@@ -533,18 +688,30 @@
 
 <!-- PAGE -->
 <div class="page" id="mainPage">
-  <!-- HOLE PROGRESS PIPS -->
-  <div class="hole-progress" id="holePips"></div>
-
-  <!-- HOLE NAVIGATION -->
-  <div class="hole-nav">
-    <button class="btn-nav" id="prevBtn" disabled>← Prev</button>
-    <span class="hole-nav-label" id="holeNavLabel">Hole 1 of 18</span>
-    <button class="btn-nav" id="nextBtn">Next →</button>
+  <!-- VIEW TOGGLE -->
+  <div class="view-toggle">
+    <button class="toggle-btn active" id="toggleHole" onclick="setView('hole')">Current Hole</button>
+    <button class="toggle-btn" id="toggleFull" onclick="setView('full')">Full Scorecard</button>
   </div>
 
-  <!-- HOLE PANEL (rebuilt per hole) -->
-  <div class="hole-panel" id="holeView"></div>
+  <!-- SINGLE HOLE VIEW -->
+  <div id="holeViewWrap">
+    <!-- HOLE PROGRESS PIPS -->
+    <div class="hole-progress" id="holePips"></div>
+
+    <!-- HOLE NAVIGATION -->
+    <div class="hole-nav">
+      <button class="btn-nav" id="prevBtn" disabled>← Prev</button>
+      <span class="hole-nav-label" id="holeNavLabel">Hole 1 of 18</span>
+      <button class="btn-nav" id="nextBtn">Next →</button>
+    </div>
+
+    <!-- HOLE PANEL (rebuilt per hole) -->
+    <div class="hole-panel" id="holeView"></div>
+  </div>
+
+  <!-- FULL SCORECARD VIEW -->
+  <div class="full-scorecard-wrap" id="fullScorecardWrap"></div>
 </div>
 
 <script>
@@ -779,6 +946,167 @@
     renderPips();
   }
 
+  // ── View toggle ───────────────────────────────────────────────────
+  let currentView = 'hole'; // 'hole' | 'full'
+
+  function setView(view) {
+    currentView = view;
+    document.getElementById('toggleHole').classList.toggle('active', view === 'hole');
+    document.getElementById('toggleFull').classList.toggle('active', view === 'full');
+    document.getElementById('holeViewWrap').style.display = view === 'hole' ? '' : 'none';
+    const wrap = document.getElementById('fullScorecardWrap');
+    if (view === 'full') {
+      wrap.classList.add('visible');
+      renderFullScorecard();
+    } else {
+      wrap.classList.remove('visible');
+    }
+  }
+
+  // ── Full scorecard render ─────────────────────────────────────────
+  const DECL_LABELS = {
+    none: '', dtg: 'Drive Green', gfg2: 'Grn in 2',
+    shortcut: 'Short Cut', '1putt': '1-Putt', cys: 'Call Score'
+  };
+  const MOMENT_LABELS = { hio: 'HiO+44', sand: 'Sand+3', chip: 'Chip+2', pap: 'PAP+2' };
+
+  function renderFullScorecard() {
+    const wrap = document.getElementById('fullScorecardWrap');
+
+    // ── Header ──
+    const playerHeaders = players.map(p =>
+      `<th class="player-col" colspan="1">${escHtml(p.name)}<br><span style="font-family:'Barlow Condensed';font-weight:600;font-size:0.6rem;color:rgba(245,240,232,0.4);letter-spacing:0.05em;">${p.mult}×</span></th>`
+    ).join('');
+
+    // ── Body rows ──
+    const rows = Array.from({ length: 18 }, (_, hi) => {
+      const h = holeData[hi];
+      const played = holeHasAnyScore(hi);
+      const isCurrent = hi === currentHole;
+      let cls = '';
+      if (isCurrent) cls = 'hole-current';
+      else if (!played) cls = 'hole-unplayed';
+
+      const playerCells = players.map((_, pi) => {
+        const pd = h.players[pi];
+        const score = holeScore(hi, pi);
+
+        if (!played || pd.strokes === null) {
+          return `<td class="player-col">—</td>`;
+        }
+
+        const diff = pd.strokes - h.par;
+        const diffLabel = diff <= -3 ? 'Albatross' : diff === -2 ? 'Eagle' : diff === -1 ? 'Birdie'
+          : diff === 0 ? 'Par' : diff === 1 ? 'Bogey' : 'Dbl+';
+
+        let declLine = '';
+        if (pd.declaration !== 'none') {
+          const hitSpan = pd.hit === true
+            ? `<span class="sc-hit">HIT</span>`
+            : pd.hit === false ? `<span class="sc-miss">MISS</span>` : '<span style="opacity:.4">—</span>';
+          declLine = `<div class="sc-score-detail">${DECL_LABELS[pd.declaration] || pd.declaration} · ${hitSpan}</div>`;
+        }
+
+        const momentKeys = Object.keys(pd.moments).filter(k => pd.moments[k]);
+        const momentLine = momentKeys.length
+          ? `<div class="sc-moments">${momentKeys.map(k => MOMENT_LABELS[k]).join(' ')}</div>`
+          : '';
+
+        return `
+          <td class="player-col">
+            <div class="sc-pts">${score !== null ? score : '—'}</div>
+            <div class="sc-score-detail">${pd.strokes} strokes · ${diffLabel}</div>
+            ${declLine}${momentLine}
+          </td>`;
+      }).join('');
+
+      return `
+        <tr class="${cls}" onclick="jumpToHole(${hi})">
+          <td><span class="sc-hole-num">${hi + 1}</span></td>
+          <td><span class="sc-par">Par ${h.par}</span></td>
+          ${playerCells}
+        </tr>`;
+    }).join('');
+
+    // ── Totals footer ──
+    const footerCells = players.map((p, pi) => {
+      let basePts = 0, multPts = 0, momentPts = 0;
+      for (let hi = 0; hi < 18; hi++) {
+        const h = holeData[hi];
+        const pd = h.players[pi];
+        if (pd.strokes === null) continue;
+        const base = basePoints(pd.strokes, h.par);
+        let holePts = base;
+        if (pd.declaration !== 'none' && pd.hit === true)  holePts = base * p.mult;
+        else if (pd.declaration !== 'none' && pd.hit === false) holePts = base + 0.5;
+        const mPts = (pd.moments.hio ? 44 : 0) + (pd.moments.sand ? 3 : 0)
+                   + (pd.moments.chip ? 2 : 0) + (pd.moments.pap ? 2 : 0);
+        basePts   += (pd.declaration !== 'none' && pd.hit === true) ? 0 : (pd.declaration !== 'none' && pd.hit === false ? 0.5 : holePts);
+        multPts   += (pd.declaration !== 'none' && pd.hit === true) ? Math.round((holePts - base) * 10) / 10 : 0;
+        momentPts += mPts;
+        // recalc cleanly
+        basePts = 0; multPts = 0; momentPts = 0;
+      }
+      // Recalc cleanly
+      for (let hi = 0; hi < 18; hi++) {
+        const h = holeData[hi];
+        const pd = h.players[pi];
+        if (pd.strokes === null) continue;
+        const base = basePoints(pd.strokes, h.par);
+        const mPts = (pd.moments.hio ? 44 : 0) + (pd.moments.sand ? 3 : 0)
+                   + (pd.moments.chip ? 2 : 0) + (pd.moments.pap ? 2 : 0);
+        if (pd.declaration !== 'none' && pd.hit === true) {
+          basePts  += base;
+          multPts  += Math.round((base * p.mult - base) * 10) / 10;
+        } else if (pd.declaration !== 'none' && pd.hit === false) {
+          basePts  += base + 0.5;
+        } else {
+          basePts  += base;
+        }
+        momentPts += mPts;
+      }
+      basePts   = Math.round(basePts * 10) / 10;
+      multPts   = Math.round(multPts * 10) / 10;
+      momentPts = Math.round(momentPts * 10) / 10;
+      const total = totalScore(pi);
+
+      return `
+        <td class="player-col">
+          <span class="tfoot-total">${total}</span>
+          <div class="tfoot-breakdown">
+            Head start: +${p.hs}<br>
+            Base: ${basePts} · Mult bonus: +${multPts}<br>
+            Moments: +${momentPts}
+          </div>
+        </td>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table class="full-scorecard-table">
+        <thead>
+          <tr>
+            <th>Hole</th>
+            <th>Par</th>
+            ${playerHeaders}
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="font-family:'Barlow Condensed';font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);">Total</td>
+            ${footerCells}
+          </tr>
+        </tfoot>
+      </table>
+    `;
+  }
+
+  // Jump to a hole from full scorecard view
+  function jumpToHole(idx) {
+    setView('hole');
+    goHole(idx);
+  }
+
   // ── Navigate holes ────────────────────────────────────────────────
   function goHole(idx) {
     if (idx < 0 || idx > 17) return;
@@ -811,6 +1139,7 @@
     updateHoleScoreDisplay(currentHole, pi);
     renderLeaderboard();
     renderPips();
+    if (currentView === 'full') renderFullScorecard();
   });
 
   document.getElementById('holeView').addEventListener('change', e => {
@@ -825,6 +1154,7 @@
     if (hmWrap) hmWrap.style.display = val === 'none' ? 'none' : '';
     updateHoleScoreDisplay(currentHole, pi);
     renderLeaderboard();
+    if (currentView === 'full') renderFullScorecard();
   });
 
   document.getElementById('holeView').addEventListener('click', e => {
@@ -845,6 +1175,7 @@
       });
       renderHole(currentHole);
       renderLeaderboard();
+      if (currentView === 'full') renderFullScorecard();
       return;
     }
 
@@ -868,6 +1199,7 @@
       }
       updateHoleScoreDisplay(currentHole, pi);
       renderLeaderboard();
+      if (currentView === 'full') renderFullScorecard();
       return;
     }
 
@@ -879,6 +1211,7 @@
       btn.classList.toggle('active');
       updateHoleScoreDisplay(currentHole, pi);
       renderLeaderboard();
+      if (currentView === 'full') renderFullScorecard();
       return;
     }
 
