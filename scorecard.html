@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>4FORE LEAGUE · Live Scorecard</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 <style>
   :root {
     --green: #1a4a2e;
@@ -658,6 +660,123 @@
     margin-top: 3px;
   }
 
+  /* ROUND CODE BADGE */
+  .round-code-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid rgba(201,168,76,0.3);
+    background: rgba(201,168,76,0.05);
+  }
+
+  .round-code-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.4);
+    white-space: nowrap;
+  }
+
+  .round-code-value {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.1rem;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(13,26,18,0.97);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--cream);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 14px 24px;
+    z-index: 9999;
+    pointer-events: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.error { border-color: rgba(192,57,43,0.5); color: var(--red); }
+
+  /* LOADING OVERLAY */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--dark);
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    transition: opacity 0.4s;
+  }
+
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(201,168,76,0.15);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.5);
+  }
+
+  /* LOCKED STATE */
+  body.round-locked .strokes-input,
+  body.round-locked .declaration-select,
+  body.round-locked .hit-btn,
+  body.round-locked .miss-btn,
+  body.round-locked .moment-btn,
+  body.round-locked .par-btn {
+    pointer-events: none;
+    opacity: 0.45;
+  }
+
+  body.round-locked .btn-end-round { display: none; }
+
+  .locked-banner {
+    display: none;
+    background: rgba(201,168,76,0.08);
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    padding: 10px 24px;
+    text-align: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  body.round-locked .locked-banner { display: block; }
+
   /* RESPONSIVE */
   @media (max-width: 640px) {
     nav { padding: 14px 20px; }
@@ -674,14 +793,27 @@
 </head>
 <body>
 
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p class="loading-text" id="loadingText">Loading round…</p>
+</div>
+
 <!-- NAV -->
 <nav>
   <a href="index.html" class="nav-logo">4<span>FORE</span></a>
   <div class="nav-right">
+    <div class="round-code-badge" id="roundCodeBadge" style="display:none">
+      <span class="round-code-label">Code</span>
+      <span class="round-code-value" id="roundCodeValue">—</span>
+    </div>
     <span class="nav-round-label" id="navRoundLabel">Live Round</span>
-    <a href="round.html" class="btn-end-round">End Round</a>
+    <button class="btn-end-round" id="endRoundBtn" onclick="endRound()">End Round</button>
   </div>
 </nav>
+
+<!-- LOCKED BANNER -->
+<div class="locked-banner">Round Completed — Scores are locked</div>
 
 <!-- LEADERBOARD -->
 <div class="leaderboard" id="leaderboard"></div>
@@ -715,33 +847,33 @@
 </div>
 
 <script>
-  // ── Parse URL params ──────────────────────────────────────────────
-  const urlParams = new URLSearchParams(window.location.search);
-  const playerCount = parseInt(urlParams.get('p')) || 0;
+  // ── Supabase state ────────────────────────────────────────────────
+  const urlParams   = new URLSearchParams(window.location.search);
+  let roundId       = urlParams.get('round');
+  let roundLocked   = false;
 
-  const players = [];
-  for (let i = 0; i < playerCount; i++) {
-    players.push({
-      name: urlParams.get('n' + i) || 'Player ' + (i + 1),
-      mult: parseFloat(urlParams.get('m' + i)) || 1.5,
-      hs:   parseInt(urlParams.get('hs' + i))  || 0,
-    });
+  // Legacy URL param support
+  const legacyCount = parseInt(urlParams.get('p')) || 0;
+
+  // ── App state ─────────────────────────────────────────────────────
+  const players  = [];
+  let currentHole = 0;
+  let currentView = 'hole';
+  let holeData   = [];
+
+  function buildHoleData() {
+    return Array.from({ length: 18 }, () => ({
+      par: 4,
+      players: players.map(() => ({
+        strokes:     null,
+        declaration: 'none',
+        hit:         null,
+        moments: { hio: false, sand: false, chip: false, pap: false }
+      }))
+    }));
   }
 
-  // ── State ─────────────────────────────────────────────────────────
-  let currentHole = 0;
-
-  const holeData = Array.from({ length: 18 }, () => ({
-    par: 4,
-    players: players.map(() => ({
-      strokes:     null,
-      declaration: 'none',
-      hit:         null,
-      moments: { hio: false, sand: false, chip: false, pap: false }
-    }))
-  }));
-
-  // ── Scoring logic ─────────────────────────────────────────────────
+  // ── Scoring logic (unchanged) ─────────────────────────────────────
   function basePoints(strokes, par) {
     const diff = strokes - par;
     if (diff <= -3) return 10;
@@ -757,20 +889,15 @@
     const pd = h.players[playerIdx];
     const p  = players[playerIdx];
     if (pd.strokes === null) return null;
-
     let pts = basePoints(pd.strokes, h.par);
-
     if (pd.declaration !== 'none') {
       if (pd.hit === true)  pts = pts * p.mult;
       else if (pd.hit === false) pts = pts + 0.5;
-      // hit === null means declared but not yet marked — no multiplier yet
     }
-
     if (pd.moments.hio)  pts += 44;
     if (pd.moments.sand) pts += 3;
     if (pd.moments.chip) pts += 2;
     if (pd.moments.pap)  pts += 2;
-
     return Math.round(pts * 10) / 10;
   }
 
@@ -808,24 +935,15 @@
   // ── Render leaderboard ────────────────────────────────────────────
   function renderLeaderboard() {
     const lb = document.getElementById('leaderboard');
-
     if (players.length === 0) { lb.innerHTML = ''; return; }
-
-    const scores = players.map((p, i) => ({
-      name: p.name,
-      total: totalScore(i),
-      idx: i
-    })).sort((a, b) => b.total - a.total);
-
-    // Assign ranks
+    const scores = players.map((p, i) => ({ name: p.name, total: totalScore(i), idx: i }))
+      .sort((a, b) => b.total - a.total);
     let rank = 1;
     scores.forEach((s, i) => {
       if (i > 0 && s.total < scores[i - 1].total) rank = i + 1;
       s.rank = rank;
     });
-
     const rankLabels = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH'];
-
     lb.innerHTML = scores.map(s => `
       <div class="lb-card rank-${Math.min(s.rank, 4)}">
         <div class="lb-rank">${rankLabels[s.rank - 1] || s.rank + 'TH'}</div>
@@ -851,27 +969,18 @@
     const h = holeData[holeIdx];
     const decls = declarationsForPar(h.par);
     const holeView = document.getElementById('holeView');
-
-    // Par selector
     const parBtns = [3, 4, 5].map(p =>
       `<button class="par-btn${h.par === p ? ' active' : ''}" data-par="${p}">${p}</button>`
     ).join('');
-
-    // Player rows
     const playerRows = players.map((player, pi) => {
       const pd = h.players[pi];
-
-      // Declaration options
       const declOptions = decls.map(d =>
         `<option value="${d.value}"${pd.declaration === d.value ? ' selected' : ''}>${d.label}</option>`
       ).join('');
-
       const declNotNone = pd.declaration !== 'none';
       const hitMissHidden = declNotNone ? '' : 'style="display:none"';
       const hitActive  = pd.hit === true  ? ' active' : '';
       const missActive = pd.hit === false ? ' active' : '';
-
-      // Moment buttons
       const momentBtns = [
         { key: 'hio',  label: '⛳ Hole in One +44' },
         { key: 'sand', label: '🏖 Sand Save +3' },
@@ -880,13 +989,10 @@
       ].map(m =>
         `<button class="moment-btn${pd.moments[m.key] ? ' active' : ''}" data-player="${pi}" data-moment="${m.key}">${m.label}</button>`
       ).join('');
-
       const score = holeScore(holeIdx, pi);
       const scoreDisplay = score !== null ? score + ' pts' : '—';
       const scoreClass = score !== null ? ' has-score' : '';
-
       const multLabel = player.mult === 1 ? 'Scratch' : player.mult + '×';
-
       return `
         <div class="player-scoring-row">
           <div class="player-row-header">
@@ -899,21 +1005,12 @@
           <div class="inputs-row">
             <div class="input-group">
               <span class="input-label">Strokes</span>
-              <input
-                class="strokes-input"
-                type="number"
-                min="1" max="15"
-                placeholder="—"
-                value="${pd.strokes !== null ? pd.strokes : ''}"
-                data-player="${pi}"
-                data-hole="${holeIdx}"
-              />
+              <input class="strokes-input" type="number" min="1" max="15" placeholder="—"
+                value="${pd.strokes !== null ? pd.strokes : ''}" data-player="${pi}" data-hole="${holeIdx}"/>
             </div>
             <div class="input-group">
               <span class="input-label">Declaration</span>
-              <select class="declaration-select" data-player="${pi}" data-hole="${holeIdx}">
-                ${declOptions}
-              </select>
+              <select class="declaration-select" data-player="${pi}" data-hole="${holeIdx}">${declOptions}</select>
             </div>
             <div class="input-group hit-miss-wrap" data-hm-player="${pi}" ${hitMissHidden}>
               <span class="input-label">Hit?</span>
@@ -927,7 +1024,6 @@
         </div>
       `;
     }).join('');
-
     holeView.innerHTML = `
       <div class="hole-header">
         <span class="hole-number">HOLE ${holeIdx + 1}</span>
@@ -938,8 +1034,6 @@
       </div>
       ${playerRows}
     `;
-
-    // Update nav
     document.getElementById('holeNavLabel').textContent = `Hole ${holeIdx + 1} of 18`;
     document.getElementById('prevBtn').disabled = holeIdx === 0;
     document.getElementById('nextBtn').disabled = holeIdx === 17;
@@ -947,8 +1041,6 @@
   }
 
   // ── View toggle ───────────────────────────────────────────────────
-  let currentView = 'hole'; // 'hole' | 'full'
-
   function setView(view) {
     currentView = view;
     document.getElementById('toggleHole').classList.toggle('active', view === 'hole');
@@ -972,46 +1064,30 @@
 
   function renderFullScorecard() {
     const wrap = document.getElementById('fullScorecardWrap');
-
-    // ── Header ──
     const playerHeaders = players.map(p =>
-      `<th class="player-col" colspan="1">${escHtml(p.name)}<br><span style="font-family:'Barlow Condensed';font-weight:600;font-size:0.6rem;color:rgba(245,240,232,0.4);letter-spacing:0.05em;">${p.mult}×</span></th>`
+      `<th class="player-col">${escHtml(p.name)}<br><span style="font-family:'Barlow Condensed';font-weight:600;font-size:0.6rem;color:rgba(245,240,232,0.4);letter-spacing:0.05em;">${p.mult}×</span></th>`
     ).join('');
-
-    // ── Body rows ──
     const rows = Array.from({ length: 18 }, (_, hi) => {
       const h = holeData[hi];
       const played = holeHasAnyScore(hi);
       const isCurrent = hi === currentHole;
-      let cls = '';
-      if (isCurrent) cls = 'hole-current';
-      else if (!played) cls = 'hole-unplayed';
-
+      let cls = isCurrent ? 'hole-current' : (!played ? 'hole-unplayed' : '');
       const playerCells = players.map((_, pi) => {
         const pd = h.players[pi];
         const score = holeScore(hi, pi);
-
-        if (!played || pd.strokes === null) {
-          return `<td class="player-col">—</td>`;
-        }
-
+        if (!played || pd.strokes === null) return `<td class="player-col">—</td>`;
         const diff = pd.strokes - h.par;
         const diffLabel = diff <= -3 ? 'Albatross' : diff === -2 ? 'Eagle' : diff === -1 ? 'Birdie'
           : diff === 0 ? 'Par' : diff === 1 ? 'Bogey' : 'Dbl+';
-
         let declLine = '';
         if (pd.declaration !== 'none') {
-          const hitSpan = pd.hit === true
-            ? `<span class="sc-hit">HIT</span>`
+          const hitSpan = pd.hit === true ? `<span class="sc-hit">HIT</span>`
             : pd.hit === false ? `<span class="sc-miss">MISS</span>` : '<span style="opacity:.4">—</span>';
           declLine = `<div class="sc-score-detail">${DECL_LABELS[pd.declaration] || pd.declaration} · ${hitSpan}</div>`;
         }
-
         const momentKeys = Object.keys(pd.moments).filter(k => pd.moments[k]);
         const momentLine = momentKeys.length
-          ? `<div class="sc-moments">${momentKeys.map(k => MOMENT_LABELS[k]).join(' ')}</div>`
-          : '';
-
+          ? `<div class="sc-moments">${momentKeys.map(k => MOMENT_LABELS[k]).join(' ')}</div>` : '';
         return `
           <td class="player-col">
             <div class="sc-pts">${score !== null ? score : '—'}</div>
@@ -1019,7 +1095,6 @@
             ${declLine}${momentLine}
           </td>`;
       }).join('');
-
       return `
         <tr class="${cls}" onclick="jumpToHole(${hi})">
           <td><span class="sc-hole-num">${hi + 1}</span></td>
@@ -1027,27 +1102,8 @@
           ${playerCells}
         </tr>`;
     }).join('');
-
-    // ── Totals footer ──
     const footerCells = players.map((p, pi) => {
       let basePts = 0, multPts = 0, momentPts = 0;
-      for (let hi = 0; hi < 18; hi++) {
-        const h = holeData[hi];
-        const pd = h.players[pi];
-        if (pd.strokes === null) continue;
-        const base = basePoints(pd.strokes, h.par);
-        let holePts = base;
-        if (pd.declaration !== 'none' && pd.hit === true)  holePts = base * p.mult;
-        else if (pd.declaration !== 'none' && pd.hit === false) holePts = base + 0.5;
-        const mPts = (pd.moments.hio ? 44 : 0) + (pd.moments.sand ? 3 : 0)
-                   + (pd.moments.chip ? 2 : 0) + (pd.moments.pap ? 2 : 0);
-        basePts   += (pd.declaration !== 'none' && pd.hit === true) ? 0 : (pd.declaration !== 'none' && pd.hit === false ? 0.5 : holePts);
-        multPts   += (pd.declaration !== 'none' && pd.hit === true) ? Math.round((holePts - base) * 10) / 10 : 0;
-        momentPts += mPts;
-        // recalc cleanly
-        basePts = 0; multPts = 0; momentPts = 0;
-      }
-      // Recalc cleanly
       for (let hi = 0; hi < 18; hi++) {
         const h = holeData[hi];
         const pd = h.players[pi];
@@ -1056,23 +1112,21 @@
         const mPts = (pd.moments.hio ? 44 : 0) + (pd.moments.sand ? 3 : 0)
                    + (pd.moments.chip ? 2 : 0) + (pd.moments.pap ? 2 : 0);
         if (pd.declaration !== 'none' && pd.hit === true) {
-          basePts  += base;
-          multPts  += Math.round((base * p.mult - base) * 10) / 10;
+          basePts += base;
+          multPts += Math.round((base * p.mult - base) * 10) / 10;
         } else if (pd.declaration !== 'none' && pd.hit === false) {
-          basePts  += base + 0.5;
+          basePts += base + 0.5;
         } else {
-          basePts  += base;
+          basePts += base;
         }
         momentPts += mPts;
       }
-      basePts   = Math.round(basePts * 10) / 10;
-      multPts   = Math.round(multPts * 10) / 10;
+      basePts = Math.round(basePts * 10) / 10;
+      multPts = Math.round(multPts * 10) / 10;
       momentPts = Math.round(momentPts * 10) / 10;
-      const total = totalScore(pi);
-
       return `
         <td class="player-col">
-          <span class="tfoot-total">${total}</span>
+          <span class="tfoot-total">${totalScore(pi)}</span>
           <div class="tfoot-breakdown">
             Head start: +${p.hs}<br>
             Base: ${basePts} · Mult bonus: +${multPts}<br>
@@ -1080,16 +1134,9 @@
           </div>
         </td>`;
     }).join('');
-
     wrap.innerHTML = `
       <table class="full-scorecard-table">
-        <thead>
-          <tr>
-            <th>Hole</th>
-            <th>Par</th>
-            ${playerHeaders}
-          </tr>
-        </thead>
+        <thead><tr><th>Hole</th><th>Par</th>${playerHeaders}</tr></thead>
         <tbody>${rows}</tbody>
         <tfoot>
           <tr>
@@ -1101,13 +1148,8 @@
     `;
   }
 
-  // Jump to a hole from full scorecard view
-  function jumpToHole(idx) {
-    setView('hole');
-    goHole(idx);
-  }
+  function jumpToHole(idx) { setView('hole'); goHole(idx); }
 
-  // ── Navigate holes ────────────────────────────────────────────────
   function goHole(idx) {
     if (idx < 0 || idx > 17) return;
     currentHole = idx;
@@ -1116,18 +1158,103 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ── Update a single hole score display ────────────────────────────
   function updateHoleScoreDisplay(holeIdx, playerIdx) {
     const el = document.getElementById(`hole-score-${holeIdx}-${playerIdx}`);
     if (!el) return;
     const score = holeScore(holeIdx, playerIdx);
-    if (score !== null) {
-      el.textContent = score + ' pts';
-      el.classList.add('has-score');
-    } else {
-      el.textContent = '—';
-      el.classList.remove('has-score');
+    if (score !== null) { el.textContent = score + ' pts'; el.classList.add('has-score'); }
+    else { el.textContent = '—'; el.classList.remove('has-score'); }
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────
+  let toastTimer = null;
+  function showToast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.toggle('error', isError);
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+  }
+
+  // ── Save to Supabase ──────────────────────────────────────────────
+  async function saveHoleScore(holeIdx, playerIdx) {
+    if (!roundId || roundLocked) return;
+    const h  = holeData[holeIdx];
+    const pd = h.players[playerIdx];
+    const row = {
+      round_id:     roundId,
+      player_index: playerIdx,
+      hole_number:  holeIdx,
+      par:          h.par,
+      strokes:      pd.strokes,
+      declaration:  pd.declaration,
+      hit:          pd.hit,
+      moments_hio:  pd.moments.hio,
+      moments_sand: pd.moments.sand,
+      moments_chip: pd.moments.chip,
+      moments_pap:  pd.moments.pap,
+    };
+    const { error } = await window.sb
+      .from('hole_scores')
+      .upsert(row, { onConflict: 'round_id,player_index,hole_number' });
+    if (error) {
+      console.warn('saveHoleScore failed:', error.message);
+      showToast('Score not saved — check connection', true);
     }
+  }
+
+  // ── Apply a realtime score update ─────────────────────────────────
+  function applyRemoteScore(record) {
+    const hi = record.hole_number;
+    const pi = record.player_index;
+    if (!holeData.length || pi >= players.length) return;
+    const h  = holeData[hi];
+    const pd = h.players[pi];
+    h.par           = record.par;
+    pd.strokes      = record.strokes;
+    pd.declaration  = record.declaration || 'none';
+    pd.hit          = record.hit;
+    pd.moments.hio  = record.moments_hio;
+    pd.moments.sand = record.moments_sand;
+    pd.moments.chip = record.moments_chip;
+    pd.moments.pap  = record.moments_pap;
+    if (hi === currentHole) renderHole(currentHole);
+    renderLeaderboard();
+    renderPips();
+    if (currentView === 'full') renderFullScorecard();
+  }
+
+  // ── Realtime subscription ─────────────────────────────────────────
+  function subscribeRealtime() {
+    if (!roundId) return;
+    window.sb
+      .channel('hole_scores:' + roundId)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'hole_scores',
+        filter: 'round_id=eq.' + roundId,
+      }, payload => {
+        if (payload.new && payload.new.round_id === roundId) {
+          applyRemoteScore(payload.new);
+        }
+      })
+      .subscribe();
+  }
+
+  // ── End round ─────────────────────────────────────────────────────
+  async function endRound() {
+    if (!roundId) { window.location.href = 'round.html'; return; }
+    if (!confirm('End this round and lock all scores?')) return;
+    const { error } = await window.sb
+      .from('rounds')
+      .update({ status: 'completed' })
+      .eq('id', roundId);
+    if (error) { showToast('Could not end round — try again', true); return; }
+    window.location.href = 'round.html';
   }
 
   // ── Event delegation on holeView ─────────────────────────────────
@@ -1140,6 +1267,7 @@
     renderLeaderboard();
     renderPips();
     if (currentView === 'full') renderFullScorecard();
+    saveHoleScore(currentHole, pi);
   });
 
   document.getElementById('holeView').addEventListener('change', e => {
@@ -1147,31 +1275,26 @@
     const pi  = parseInt(e.target.dataset.player);
     const val = e.target.value;
     holeData[currentHole].players[pi].declaration = val;
-    // Reset hit if switching to none
     if (val === 'none') holeData[currentHole].players[pi].hit = null;
-    // Show/hide hit-miss
     const hmWrap = document.querySelector(`.hit-miss-wrap[data-hm-player="${pi}"]`);
     if (hmWrap) hmWrap.style.display = val === 'none' ? 'none' : '';
     updateHoleScoreDisplay(currentHole, pi);
     renderLeaderboard();
     if (currentView === 'full') renderFullScorecard();
+    saveHoleScore(currentHole, pi);
   });
 
   document.getElementById('holeView').addEventListener('click', e => {
     const btn = e.target.closest('button');
     if (!btn) return;
 
-    // Par selector
     if (btn.classList.contains('par-btn')) {
       const newPar = parseInt(btn.dataset.par);
       holeData[currentHole].par = newPar;
-      // Reset declarations that are no longer valid
       const validDecls = declarationsForPar(newPar).map(d => d.value);
-      holeData[currentHole].players.forEach(pd => {
-        if (!validDecls.includes(pd.declaration)) {
-          pd.declaration = 'none';
-          pd.hit = null;
-        }
+      holeData[currentHole].players.forEach((pd, pi) => {
+        if (!validDecls.includes(pd.declaration)) { pd.declaration = 'none'; pd.hit = null; }
+        saveHoleScore(currentHole, pi);
       });
       renderHole(currentHole);
       renderLeaderboard();
@@ -1179,18 +1302,15 @@
       return;
     }
 
-    // Hit / Miss
     if (btn.dataset.hm) {
-      const pi  = parseInt(btn.dataset.player);
+      const pi    = parseInt(btn.dataset.player);
       const isHit = btn.dataset.hm === 'hit';
-      // Toggle off if already active
       const current = holeData[currentHole].players[pi].hit;
       if ((isHit && current === true) || (!isHit && current === false)) {
         holeData[currentHole].players[pi].hit = null;
         btn.classList.remove('active');
       } else {
         holeData[currentHole].players[pi].hit = isHit;
-        // Update button styles
         const hmWrap = document.querySelector(`.hit-miss-wrap[data-hm-player="${pi}"]`);
         if (hmWrap) {
           hmWrap.querySelector('.hit-btn').classList.toggle('active', isHit);
@@ -1200,10 +1320,10 @@
       updateHoleScoreDisplay(currentHole, pi);
       renderLeaderboard();
       if (currentView === 'full') renderFullScorecard();
+      saveHoleScore(currentHole, pi);
       return;
     }
 
-    // Moment bonus
     if (btn.classList.contains('moment-btn')) {
       const pi = parseInt(btn.dataset.player);
       const m  = btn.dataset.moment;
@@ -1212,37 +1332,130 @@
       updateHoleScoreDisplay(currentHole, pi);
       renderLeaderboard();
       if (currentView === 'full') renderFullScorecard();
+      saveHoleScore(currentHole, pi);
       return;
     }
-
   });
 
-  // ── Navigation buttons (outside holeView, need separate listeners) ─
   document.getElementById('prevBtn').addEventListener('click', () => goHole(currentHole - 1));
   document.getElementById('nextBtn').addEventListener('click', () => goHole(currentHole + 1));
 
-  // ── Utility ───────────────────────────────────────────────────────
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // ── Init ──────────────────────────────────────────────────────────
+  async function initRound() {
+    const overlay = document.getElementById('loadingOverlay');
+    const loadTxt = document.getElementById('loadingText');
+
+    // Legacy URL params (no round= param)
+    if (!roundId && legacyCount > 0) {
+      for (let i = 0; i < legacyCount; i++) {
+        players.push({
+          name: urlParams.get('n' + i) || 'Player ' + (i + 1),
+          mult: parseFloat(urlParams.get('m' + i)) || 1.5,
+          hs:   parseInt(urlParams.get('hs' + i))  || 0,
+        });
+      }
+      holeData = buildHoleData();
+      overlay.classList.add('hidden');
+      document.getElementById('navRoundLabel').textContent = players.map(p => p.name.split(' ')[0]).join(' · ');
+      renderHole(0);
+      renderLeaderboard();
+      return;
+    }
+
+    // No round ID at all
+    if (!roundId) {
+      overlay.classList.add('hidden');
+      document.getElementById('mainPage').innerHTML = `
+        <div class="no-players">
+          <h2>No Round Found</h2>
+          <p>Start a new round or join one with a code.</p>
+          <a href="round.html" class="btn-primary">Set Up Round</a>
+        </div>
+      `;
+      document.getElementById('leaderboard').innerHTML = '';
+      return;
+    }
+
+    // Fetch from Supabase
+    try {
+      loadTxt.textContent = 'Loading round…';
+
+      const { data: round, error: roundErr } = await window.sb
+        .from('rounds')
+        .select('id, status, code')
+        .eq('id', roundId)
+        .single();
+
+      if (roundErr || !round) throw new Error('Round not found');
+
+      document.getElementById('roundCodeBadge').style.display = 'flex';
+      document.getElementById('roundCodeValue').textContent = round.code;
+
+      if (round.status === 'completed') {
+        roundLocked = true;
+        document.body.classList.add('round-locked');
+      }
+
+      loadTxt.textContent = 'Loading players…';
+      const { data: roundPlayers, error: playersErr } = await window.sb
+        .from('round_players')
+        .select('player_index, name, multiplier, head_start')
+        .eq('round_id', roundId)
+        .order('player_index');
+
+      if (playersErr || !roundPlayers || !roundPlayers.length) throw new Error('Players not found');
+
+      roundPlayers.forEach(rp => {
+        players.push({ name: rp.name, mult: rp.multiplier, hs: rp.head_start });
+      });
+
+      holeData = buildHoleData();
+
+      loadTxt.textContent = 'Loading scores…';
+      const { data: scores } = await window.sb
+        .from('hole_scores')
+        .select('*')
+        .eq('round_id', roundId);
+
+      if (scores) {
+        scores.forEach(row => {
+          const h  = holeData[row.hole_number];
+          const pd = h.players[row.player_index];
+          h.par           = row.par;
+          pd.strokes      = row.strokes;
+          pd.declaration  = row.declaration || 'none';
+          pd.hit          = row.hit;
+          pd.moments.hio  = row.moments_hio;
+          pd.moments.sand = row.moments_sand;
+          pd.moments.chip = row.moments_chip;
+          pd.moments.pap  = row.moments_pap;
+        });
+      }
+
+      overlay.classList.add('hidden');
+      document.getElementById('navRoundLabel').textContent = players.map(p => p.name.split(' ')[0]).join(' · ');
+      renderHole(0);
+      renderLeaderboard();
+      subscribeRealtime();
+
+    } catch (err) {
+      console.error('initRound error:', err);
+      overlay.classList.add('hidden');
+      document.getElementById('mainPage').innerHTML = `
+        <div class="no-players">
+          <h2>Could Not Load Round</h2>
+          <p>${escHtml(err.message || 'Unknown error')}</p>
+          <a href="round.html" class="btn-primary">Back to Setup</a>
+        </div>
+      `;
+      document.getElementById('leaderboard').innerHTML = '';
+    }
   }
 
-  // ── Init ──────────────────────────────────────────────────────────
-  if (players.length === 0) {
-    document.getElementById('mainPage').innerHTML = `
-      <div class="no-players">
-        <h2>No Players Found</h2>
-        <p>Start a round from the player setup page to load player data.</p>
-        <a href="round.html" class="btn-primary">Set Up Round</a>
-      </div>
-    `;
-    document.getElementById('leaderboard').innerHTML = '';
-  } else {
-    document.getElementById('navRoundLabel').textContent =
-      players.map(p => p.name.split(' ')[0]).join(' · ');
-    renderHole(0);
-    renderLeaderboard();
-  }
+  initRound();
 </script>
+
+<div class="toast" id="toast"></div>
 
 </body>
 </html>

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>4FORE LEAGUE · Start a Round</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 <style>
   :root {
     --green: #1a4a2e;
@@ -398,6 +400,151 @@
     letter-spacing: 0.05em;
   }
 
+  /* JOIN SECTION */
+  .section-divider {
+    margin: 56px 0 48px;
+    border: none;
+    border-top: 1px solid rgba(201,168,76,0.12);
+    position: relative;
+  }
+
+  .section-divider::after {
+    content: 'OR';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dark);
+    padding: 0 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: rgba(201,168,76,0.3);
+  }
+
+  .join-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-bright);
+    margin-bottom: 8px;
+  }
+
+  .join-title {
+    font-family: 'Black Ops One', cursive;
+    font-size: 2rem;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .join-subtitle {
+    font-size: 0.9rem;
+    color: rgba(245,240,232,0.45);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .join-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .join-code-input {
+    background: rgba(13,26,18,0.8);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--cream);
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.8rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 16px 24px;
+    width: 180px;
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .join-code-input::placeholder {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    color: rgba(245,240,232,0.2);
+    font-weight: 400;
+  }
+
+  .join-code-input:focus {
+    border-color: rgba(201,168,76,0.55);
+    background: rgba(45,122,79,0.15);
+  }
+
+  .btn-join {
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 18px 40px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-join:hover:not(:disabled) {
+    background: rgba(201,168,76,0.1);
+    border-color: var(--gold);
+  }
+
+  .btn-join:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .join-error {
+    margin-top: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    color: var(--red);
+    letter-spacing: 0.05em;
+    min-height: 1.2em;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(13,26,18,0.97);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--cream);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 14px 24px;
+    z-index: 9999;
+    pointer-events: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .toast.error { border-color: rgba(192,57,43,0.5); color: var(--red); }
+
   /* RESPONSIVE */
   @media (max-width: 768px) {
     nav { padding: 16px 24px; }
@@ -444,7 +591,34 @@
     <button class="btn-start" id="startRoundBtn" disabled onclick="startRound()">Start Round</button>
     <p class="start-hint" id="startHint">Add at least 2 players to begin</p>
   </div>
+
+  <hr class="section-divider">
+
+  <div class="join-section">
+    <p class="join-eyebrow">Join a Round in Progress</p>
+    <h2 class="join-title">Enter Code</h2>
+    <p class="join-subtitle">Get the 4-character code from the scorecard device and join as a scorer.</p>
+    <div class="join-row">
+      <input
+        class="join-code-input"
+        id="joinCodeInput"
+        type="text"
+        maxlength="4"
+        placeholder="A3X7"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); updateJoinButton()"
+        onkeydown="if(event.key==='Enter') joinRound()"
+        aria-label="4-character round code"
+      />
+      <button class="btn-join" id="joinBtn" disabled onclick="joinRound()">Join Round</button>
+    </div>
+    <p class="join-error" id="joinError"></p>
+  </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
   let playerCount = 0;
@@ -471,7 +645,6 @@
   }
 
   function renderResult(id, tier) {
-    // Find elements inside the currently active panel only
     const activePanel = document.querySelector('#player-' + id + ' .method-panel.active');
     if (!activePanel) return;
     const multEl = activePanel.querySelector('.result-value.mult-val');
@@ -495,30 +668,17 @@
     updateStartButton();
   }
 
-  function onIndexInput(id, val) {
-    renderResult(id, tierFromIndex(val));
-  }
-
-  function onScoreInput(id, val) {
-    renderResult(id, tierFromScore(val));
-  }
-
-  function onGhinInput(id, val) {
-    // Treat GHIN number same as handicap index for now
-    renderResult(id, tierFromIndex(val));
-  }
+  function onIndexInput(id, val) { renderResult(id, tierFromIndex(val)); }
+  function onScoreInput(id, val) { renderResult(id, tierFromScore(val)); }
+  function onGhinInput(id, val)  { renderResult(id, tierFromIndex(val)); }
 
   function switchTab(id, method) {
-    // Toggle tab active states
     ['index','score','ghin'].forEach(m => {
       document.getElementById('tab-' + m + '-' + id).classList.toggle('active', m === method);
       document.getElementById('panel-' + m + '-' + id).classList.toggle('active', m === method);
     });
-    // Clear result when switching methods
     renderResult(id, null);
-    // Clear all inputs for this card
     document.querySelectorAll('#player-' + id + ' .method-input').forEach(el => el.value = '');
-    // Focus the now-visible input
     const panel = document.getElementById('panel-' + method + '-' + id);
     const inp = panel.querySelector('.method-input');
     if (inp) inp.focus();
@@ -553,18 +713,11 @@
 
       <div class="method-panels">
 
-        <!-- HANDICAP INDEX -->
         <div class="method-panel active" id="panel-index-${id}">
           <div class="method-input-row">
             <div class="method-input-wrap">
-              <input
-                class="method-input"
-                type="number"
-                placeholder="0 – 54"
-                min="0" max="54"
-                oninput="onIndexInput(${id}, this.value)"
-                aria-label="Handicap index"
-              />
+              <input class="method-input" type="number" placeholder="0 – 54" min="0" max="54"
+                oninput="onIndexInput(${id}, this.value)" aria-label="Handicap index"/>
             </div>
             <div class="result-display">
               <div class="result-cell">
@@ -580,18 +733,11 @@
           </div>
         </div>
 
-        <!-- AVERAGE SCORE -->
         <div class="method-panel" id="panel-score-${id}">
           <div class="method-input-row">
             <div class="method-input-wrap">
-              <input
-                class="method-input"
-                type="number"
-                placeholder="e.g. 82"
-                min="55" max="150"
-                oninput="onScoreInput(${id}, this.value)"
-                aria-label="Average 18-hole score"
-              />
+              <input class="method-input" type="number" placeholder="e.g. 82" min="55" max="150"
+                oninput="onScoreInput(${id}, this.value)" aria-label="Average 18-hole score"/>
               <p class="method-note">Typical 18-hole score</p>
             </div>
             <div class="result-display">
@@ -608,18 +754,11 @@
           </div>
         </div>
 
-        <!-- GHIN NUMBER -->
         <div class="method-panel" id="panel-ghin-${id}">
           <div class="method-input-row">
             <div class="method-input-wrap">
-              <input
-                class="method-input"
-                type="number"
-                placeholder="GHIN #"
-                min="0"
-                oninput="onGhinInput(${id}, this.value)"
-                aria-label="GHIN number"
-              />
+              <input class="method-input" type="number" placeholder="GHIN #" min="0"
+                oninput="onGhinInput(${id}, this.value)" aria-label="GHIN number"/>
               <p class="method-note">Official USGA lookup coming soon — treated as handicap index for now</p>
             </div>
             <div class="result-display">
@@ -683,39 +822,58 @@
     const cards = document.getElementById('playersList').querySelectorAll('.player-card');
     const btn   = document.getElementById('startRoundBtn');
     const hint  = document.getElementById('startHint');
-
-    let ready = 0;
-    let missingTier = 0;
+    let ready = 0, missingTier = 0;
 
     cards.forEach(card => {
       const name = card.querySelector('.player-name-input').value.trim();
       if (!name) return;
-      if (playerHasTier(card)) {
-        ready++;
-      } else {
-        missingTier++;
-      }
+      if (playerHasTier(card)) ready++;
+      else missingTier++;
     });
 
     const total = ready + missingTier;
     btn.disabled = ready < 2;
 
-    if (total === 0) {
-      hint.textContent = 'Add at least 2 players to begin';
-    } else if (missingTier > 0) {
-      hint.textContent = `${missingTier} player${missingTier > 1 ? 's' : ''} still need${missingTier === 1 ? 's' : ''} a handicap`;
-    } else if (ready === 1) {
-      hint.textContent = 'Add one more player to begin';
-    } else {
-      hint.textContent = `${ready} players ready`;
-    }
+    if (total === 0)          hint.textContent = 'Add at least 2 players to begin';
+    else if (missingTier > 0) hint.textContent = `${missingTier} player${missingTier > 1 ? 's' : ''} still need${missingTier === 1 ? 's' : ''} a handicap`;
+    else if (ready === 1)     hint.textContent = 'Add one more player to begin';
+    else                      hint.textContent = `${ready} players ready`;
   }
 
-  function startRound() {
-    const cards = document.getElementById('playersList').querySelectorAll('.player-card');
-    const params = new URLSearchParams();
-    let idx = 0;
+  // ── Toast ─────────────────────────────────────────────────────────
+  let toastTimer = null;
+  function showToast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.toggle('error', isError);
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+  }
 
+  // ── Join button state ─────────────────────────────────────────────
+  function updateJoinButton() {
+    const val = document.getElementById('joinCodeInput').value;
+    document.getElementById('joinBtn').disabled = val.length !== 4;
+    document.getElementById('joinError').textContent = '';
+  }
+
+  // ── Derive 4-char code from UUID ──────────────────────────────────
+  function codeFromUUID(uuid) {
+    const hex = uuid.replace(/-/g, '').slice(0, 8);
+    const n   = parseInt(hex, 16);
+    return n.toString(36).toUpperCase().padStart(4, '0').slice(-4);
+  }
+
+  // ── Start Round (async — writes to Supabase) ──────────────────────
+  async function startRound() {
+    const btn  = document.getElementById('startRoundBtn');
+    const hint = document.getElementById('startHint');
+    btn.disabled = true;
+    hint.textContent = 'Creating round…';
+
+    const cards   = document.getElementById('playersList').querySelectorAll('.player-card');
+    const players = [];
     cards.forEach(card => {
       const name = card.querySelector('.player-name-input').value.trim();
       if (!name || !playerHasTier(card)) return;
@@ -724,14 +882,85 @@
       const hsEl   = activePanel ? activePanel.querySelector('.hs-val')   : null;
       const multRaw = multEl ? multEl.textContent.replace('×', '').trim() : '1.5';
       const hsRaw   = hsEl   ? hsEl.textContent.replace('+', '').trim()   : '0';
-      params.set('n' + idx, name);
-      params.set('m' + idx, multRaw);
-      params.set('hs' + idx, hsRaw);
-      idx++;
+      players.push({ name, mult: parseFloat(multRaw), hs: parseFloat(hsRaw) });
     });
 
-    params.set('p', idx);
-    window.location.href = 'scorecard.html?' + params.toString();
+    try {
+      // Insert round with placeholder code (must satisfy NOT NULL + length=4 check)
+      const { data: roundData, error: roundErr } = await window.sb
+        .from('rounds')
+        .insert({ status: 'active', code: 'INIT' })
+        .select('id')
+        .single();
+
+      if (roundErr) throw roundErr;
+
+      const roundId   = roundData.id;
+      const roundCode = codeFromUUID(roundId);
+
+      // Update with the real derived code
+      const { error: codeErr } = await window.sb
+        .from('rounds')
+        .update({ code: roundCode })
+        .eq('id', roundId);
+
+      if (codeErr) throw codeErr;
+
+      // Insert all players
+      const playerRows = players.map((p, idx) => ({
+        round_id:     roundId,
+        player_index: idx,
+        name:         p.name,
+        multiplier:   p.mult,
+        head_start:   p.hs,
+      }));
+
+      const { error: playersErr } = await window.sb
+        .from('round_players')
+        .insert(playerRows);
+
+      if (playersErr) throw playersErr;
+
+      window.location.href = 'scorecard.html?round=' + roundId;
+
+    } catch (err) {
+      console.error('startRound error:', err);
+      showToast('Could not save round — check connection', true);
+      btn.disabled = false;
+      updateStartButton();
+    }
+  }
+
+  // ── Join Round ────────────────────────────────────────────────────
+  async function joinRound() {
+    const code  = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+    const btn   = document.getElementById('joinBtn');
+    const errEl = document.getElementById('joinError');
+
+    if (code.length !== 4) return;
+    btn.disabled = true;
+    errEl.textContent = '';
+
+    try {
+      const { data, error } = await window.sb
+        .from('rounds')
+        .select('id, status')
+        .eq('code', code)
+        .single();
+
+      if (error || !data) {
+        errEl.textContent = 'Round not found. Check the code and try again.';
+        btn.disabled = false;
+        return;
+      }
+
+      window.location.href = 'scorecard.html?round=' + data.id;
+
+    } catch (err) {
+      console.error('joinRound error:', err);
+      errEl.textContent = 'Connection error. Try again.';
+      btn.disabled = false;
+    }
   }
 
   // Start with one player card
