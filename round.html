@@ -479,15 +479,15 @@
     const subEl  = activePanel.querySelector('.result-sub');
 
     if (!tier) {
-      multEl.className = 'result-value';
+      multEl.className = 'result-value mult-val';
       multEl.textContent = '—';
-      hsEl.className = 'result-value';
+      hsEl.className = 'result-value hs-val';
       hsEl.textContent = '—';
       if (subEl) subEl.textContent = '';
     } else {
-      multEl.className = 'result-value ' + tier.cls;
+      multEl.className = 'result-value mult-val ' + tier.cls;
       multEl.textContent = tier.mult;
-      hsEl.className = 'result-value active-hs';
+      hsEl.className = 'result-value hs-val active-hs';
       hsEl.textContent = '+' + tier.hsVal;
       if (subEl) subEl.textContent = tier.name;
     }
