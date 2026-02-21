@@ -341,6 +341,11 @@ async function handleSignIn() {
   const { error } = await auth.signIn(email, pw);
 
   if (error) {
+    if (error.message?.toLowerCase().includes('email not confirmed')) {
+      sessionStorage.setItem('pending_verification_email', email);
+      window.location.href = 'confirm-email.html';
+      return;
+    }
     showToast(error.message === 'Invalid login credentials'
       ? 'Incorrect email or password.'
       : error.message);

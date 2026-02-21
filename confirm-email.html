@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Your Email · 4FORE League</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<style>
+  :root {
+    --cream:  #F5F0E8;
+    --green:  #1B3D2A;
+    --green2: #2A5C3F;
+    --gold:   #C9A84C;
+    --text:   #1A1A1A;
+    --muted:  #6B6B6B;
+    --border: #D6CFC4;
+    --error:  #B91C1C;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    color: var(--green);
+    text-decoration: none;
+    margin-bottom: 48px;
+    letter-spacing: 0.03em;
+  }
+
+  .logo span { color: var(--gold); }
+
+  .card {
+    background: white;
+    border-radius: 8px;
+    padding: 48px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 4px 24px rgba(27,61,42,0.08);
+    text-align: center;
+  }
+
+  /* ── Pending state ── */
+  .state { display: none; }
+  .state.active { display: block; }
+
+  .icon-wrap {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+  }
+
+  .icon-wrap.pending { background: rgba(27,61,42,0.08); }
+  .icon-wrap.success { background: rgba(27,61,42,0.1); }
+  .icon-wrap.error   { background: rgba(185,28,28,0.08); }
+
+  .state-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--green);
+    letter-spacing: 0.03em;
+    margin-bottom: 12px;
+  }
+
+  .state-title.error-title { color: var(--error); }
+
+  .state-body {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  .state-body strong { color: var(--text); }
+
+  .btn {
+    display: inline-block;
+    padding: 13px 32px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn:hover { transform: translateY(-1px); }
+
+  .btn-green {
+    background: var(--green);
+    color: white;
+  }
+
+  .btn-green:hover { background: var(--green2); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 11px 24px;
+  }
+
+  .btn-outline:hover { border-color: var(--green); color: var(--green); }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .resend-note {
+    margin-top: 24px;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .resend-note button {
+    background: none;
+    border: none;
+    color: var(--green);
+    font-size: 0.82rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .resend-note button:hover { text-decoration: underline; }
+  .resend-note button:disabled { color: var(--muted); cursor: default; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: transform 0.3s;
+    z-index: 999;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error-toast { background: var(--error); }
+
+  @media (max-width: 500px) {
+    .card { padding: 36px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="logo">4<span>FORE</span> LEAGUE</a>
+
+<div class="card">
+
+  <!-- Pending: waiting for user to click email link -->
+  <div class="state active" id="state-pending">
+    <div class="icon-wrap pending">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M4 8l12 10L28 8" stroke="#1B3D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="3" y="7" width="26" height="19" rx="2" stroke="#1B3D2A" stroke-width="2"/>
+      </svg>
+    </div>
+    <h1 class="state-title">Check your email</h1>
+    <p class="state-body">
+      We've sent a verification link to <strong id="pending-email">your email</strong>.<br><br>
+      Click the link in that email to confirm your account, then come back here to sign in.
+    </p>
+    <div class="btn-row">
+      <a href="login.html" class="btn btn-green">Go to Sign In</a>
+    </div>
+    <p class="resend-note">
+      Didn't get it? Check spam, or
+      <button id="btn-resend" onclick="resendEmail()">resend the link</button>.
+    </p>
+  </div>
+
+  <!-- Success: email confirmed, token in URL -->
+  <div class="state" id="state-success">
+    <div class="icon-wrap success">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M6 16L13 23L26 10" stroke="#1B3D2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1 class="state-title">Email confirmed!</h1>
+    <p class="state-body">Your account is verified. You're ready to play.</p>
+    <div class="btn-row">
+      <a href="profile-setup.html" class="btn btn-green">Set up profile →</a>
+      <a href="index.html" class="btn btn-outline">Go to home</a>
+    </div>
+  </div>
+
+  <!-- Error: token expired or invalid -->
+  <div class="state" id="state-error">
+    <div class="icon-wrap error">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M16 10v8M16 22v1" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="13" stroke="#B91C1C" stroke-width="2"/>
+      </svg>
+    </div>
+    <h1 class="state-title error-title">Link expired</h1>
+    <p class="state-body">This verification link has expired or already been used. Request a new one below.</p>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="resendEmail()">Resend verification email</button>
+      <a href="login.html" class="btn btn-outline">Back to sign in</a>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  // Show the email address that was used to sign up (stored temporarily)
+  const pendingEmail = sessionStorage.getItem('pending_verification_email');
+  if (pendingEmail) {
+    document.getElementById('pending-email').textContent = pendingEmail;
+  }
+
+  // Check if this is a callback from the verification link
+  // Supabase appends #access_token=...&type=signup to the redirect URL
+  const hash = window.location.hash;
+  const params = new URLSearchParams(hash.replace('#', '?'));
+  const type        = params.get('type');
+  const accessToken = params.get('access_token');
+  const refreshToken= params.get('refresh_token');
+  const errorCode   = params.get('error_code') || new URLSearchParams(window.location.search).get('error_code');
+
+  if (errorCode) {
+    // Token expired or invalid
+    showState('error');
+    return;
+  }
+
+  if (type === 'signup' && accessToken) {
+    // Set the session from the URL tokens
+    const { error } = await window.sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    if (error) {
+      showState('error');
+      return;
+    }
+
+    // Write profile + consent that was stashed before email verification
+    const raw = sessionStorage.getItem('pending_profile');
+    if (raw) {
+      try {
+        const p = JSON.parse(raw);
+        await auth.upsertProfile(p.userId, {
+          email: p.email,
+          stripe_customer_id: p.stripe_customer_id,
+          trial_started_at: p.trial_started_at,
+          trial_ends_at: p.trial_ends_at,
+        });
+        await window.sb.from('marketing_consent').insert({
+          user_id: p.userId,
+          email_marketing: p.marketing_consent,
+          consented_at: new Date().toISOString(),
+        });
+        await auth.sendEmail('welcome', p.email, { name: p.email.split('@')[0] });
+        sessionStorage.removeItem('pending_profile');
+      } catch (e) {
+        console.error('Post-verification profile write failed:', e);
+      }
+    }
+
+    sessionStorage.removeItem('pending_verification_email');
+    showState('success');
+    return;
+  }
+
+  // Default: show pending state
+  showState('pending');
+});
+
+function showState(name) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.getElementById('state-' + name).classList.add('active');
+}
+
+async function resendEmail() {
+  const email = sessionStorage.getItem('pending_verification_email');
+  if (!email) {
+    showToast('Sign up again to get a new verification email.', true);
+    return;
+  }
+
+  const btn = document.getElementById('btn-resend');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+  const { error } = await window.sb.auth.resend({ type: 'signup', email });
+
+  if (error) {
+    showToast(error.message, true);
+  } else {
+    showToast('Verification email resent — check your inbox.');
+  }
+
+  if (btn) {
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'resend the link';
+    }, 30000);
+  }
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error-toast' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>

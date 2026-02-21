@@ -590,11 +590,8 @@ async function handleSignup() {
     if (authErr) throw authErr;
     const userId = authData.user.id;
 
-    // 1b. Sign in immediately to establish a session so RLS passes
-    const { error: signInErr } = await auth.signIn(email, pw);
-    if (signInErr) throw signInErr;
-
     // 2. Create Stripe customer + SetupIntent
+    // (no session needed — Edge Function uses service key)
     const { clientSecret, customerId } = await auth.createSetupIntent(email, userId);
 
     // 3. Collect card via Stripe.js
@@ -608,24 +605,19 @@ async function handleSignup() {
       return;
     }
 
-    // 4. Save profile + stripe_customer_id + consent
-    await auth.upsertProfile(userId, {
+    // 4. Stash profile data in sessionStorage — written to DB after email confirmation
+    sessionStorage.setItem('pending_verification_email', email);
+    sessionStorage.setItem('pending_profile', JSON.stringify({
+      userId,
       email,
       stripe_customer_id: customerId,
+      marketing_consent: marketingConsent,
       trial_started_at: new Date().toISOString(),
       trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString(),
-    });
+    }));
 
-    await window.sb.from('marketing_consent').insert({
-      user_id: userId,
-      email_marketing: marketingConsent,
-      consented_at: new Date().toISOString(),
-    });
-
-    // 5. Send welcome email
-    await auth.sendEmail('welcome', email, { name: email.split('@')[0] });
-
-    goStep(2);
+    // 5. Redirect to confirmation pending page
+    window.location.href = 'confirm-email.html';
 
   } catch (err) {
     showToast(err.message || 'Something went wrong. Please try again.');
