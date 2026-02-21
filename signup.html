@@ -590,6 +590,10 @@ async function handleSignup() {
     if (authErr) throw authErr;
     const userId = authData.user.id;
 
+    // 1b. Sign in immediately to establish a session so RLS passes
+    const { error: signInErr } = await auth.signIn(email, pw);
+    if (signInErr) throw signInErr;
+
     // 2. Create Stripe customer + SetupIntent
     const { clientSecret, customerId } = await auth.createSetupIntent(email, userId);
 
