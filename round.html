@@ -572,8 +572,16 @@
     <li><a href="index.html#moments">Moments</a></li>
     <li><a href="index.html#scorecard">Scorecard</a></li>
     <li><a href="round.html" class="active">Start Round</a></li>
+    <li><a href="login.html" id="nav-auth-link" style="color:var(--gold);opacity:1;">Sign In</a></li>
   </ul>
 </nav>
+<script>
+  (async () => {
+    const session = await auth.getSession();
+    const link = document.getElementById('nav-auth-link');
+    if (session) { link.href = 'account.html'; link.textContent = 'Account'; }
+  })();
+</script>
 
 <!-- PAGE -->
 <div class="page">

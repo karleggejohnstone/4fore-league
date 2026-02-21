@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
+<script src="auth.js"></script>
 <style>
   :root {
     --green: #1a4a2e;
@@ -809,8 +810,16 @@
     </div>
     <span class="nav-round-label" id="navRoundLabel">Live Round</span>
     <button class="btn-end-round" id="endRoundBtn" onclick="endRound()">End Round</button>
+    <a href="login.html" id="nav-auth-link" style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);text-decoration:none;opacity:0.9;">Sign In</a>
   </div>
 </nav>
+<script>
+  (async () => {
+    const session = await auth.getSession();
+    const link = document.getElementById('nav-auth-link');
+    if (session) { link.href = 'account.html'; link.textContent = 'Account'; }
+  })();
+</script>
 
 <!-- LOCKED BANNER -->
 <div class="locked-banner">Round Completed — Scores are locked</div>
