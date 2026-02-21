@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile Setup · 4FORE League</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<style>
+  :root {
+    --cream:  #F5F0E8;
+    --cream2: #EDE8DF;
+    --green:  #1B3D2A;
+    --green2: #2A5C3F;
+    --gold:   #C9A84C;
+    --gold2:  #E8C96A;
+    --text:   #1A1A1A;
+    --muted:  #6B6B6B;
+    --error:  #B91C1C;
+    --border: #D6CFC4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .topbar-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    color: var(--green);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+  }
+
+  .topbar-logo span { color: var(--gold); }
+
+  .topbar-step {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── Progress ── */
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.4s ease;
+  }
+
+  /* ── Content ── */
+  .page-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  .section-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .page-sub {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  /* ── Steps ── */
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 24px; }
+
+  .field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+
+  .field-hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    padding: 12px 14px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+
+  .field input:focus, .field select:focus { border-color: var(--green); }
+
+  .field-error {
+    font-size: 0.78rem;
+    color: var(--error);
+    margin-top: 4px;
+    display: none;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* Handicap tile picker */
+  .hdcp-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .hdcp-tile {
+    padding: 16px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hdcp-tile:hover { border-color: var(--green); }
+
+  .hdcp-tile.selected {
+    border-color: var(--green);
+    background: rgba(27,61,42,0.06);
+  }
+
+  .hdcp-tile .hdcp-range {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .hdcp-tile .hdcp-mult {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    color: var(--green);
+    line-height: 1.2;
+  }
+
+  .hdcp-tile.selected .hdcp-mult { color: var(--gold); }
+
+  .hdcp-tile .hdcp-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* Avatar initials picker */
+  .avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+  }
+
+  .avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .btn-next {
+    padding: 14px 40px;
+    background: var(--green);
+    color: white;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn-next:hover:not(:disabled) { background: var(--green2); transform: translateY(-1px); }
+  .btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-back {
+    padding: 13px 24px;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .btn-back:hover { border-color: var(--green); color: var(--green); }
+
+  .btn-skip {
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    transition: color 0.2s;
+  }
+
+  .btn-skip:hover { color: var(--green); }
+
+  /* Step nav dots */
+  .step-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 36px;
+  }
+
+  .step-nav-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s, transform 0.2s;
+  }
+
+  .step-nav-dot.active { background: var(--green); transform: scale(1.3); }
+  .step-nav-dot.done   { background: var(--gold); }
+
+  /* Complete card */
+  .complete-card {
+    text-align: center;
+    padding: 48px 0;
+  }
+
+  .complete-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(27,61,42,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+  }
+
+  .complete-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+
+  .complete-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 360px;
+    margin: 0 auto 32px;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary-gold {
+    padding: 14px 36px;
+    background: var(--gold);
+    color: var(--green);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s;
+  }
+
+  .btn-primary-gold:hover { background: var(--gold2); }
+
+  .btn-outline-green {
+    padding: 13px 32px;
+    background: transparent;
+    border: 1.5px solid var(--green);
+    color: var(--green);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s;
+  }
+
+  .btn-outline-green:hover { background: rgba(27,61,42,0.06); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--error);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: transform 0.3s;
+    z-index: 999;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    .hdcp-grid { grid-template-columns: repeat(2, 1fr); }
+    .field-row { grid-template-columns: 1fr; }
+    .topbar { padding: 16px 20px; }
+    .page-wrap { padding: 36px 20px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">4<span>FORE</span> LEAGUE</a>
+  <span class="topbar-step" id="topbar-step">Step 1 of 3</span>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progress-fill" style="width: 33%"></div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- Step nav dots -->
+  <div class="step-nav">
+    <div class="step-nav-dot active" id="dot0"></div>
+    <div class="step-nav-dot" id="dot1"></div>
+    <div class="step-nav-dot" id="dot2"></div>
+  </div>
+
+  <!-- Step 0: Basic info -->
+  <div class="step-panel active" id="step0">
+    <p class="section-tag">Profile Setup · Step 1 of 3</p>
+    <h1 class="page-title">Tell us about yourself</h1>
+    <p class="page-sub">This is what your fellow players will see on the scorecard.</p>
+
+    <div class="avatar-row">
+      <div class="avatar-preview" id="avatar-preview">??</div>
+      <div>
+        <p style="font-size:0.88rem; color:var(--muted); line-height:1.5;">Your avatar is generated from your initials — personalise your display name below.</p>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>First Name</label>
+        <input type="text" id="first-name" placeholder="e.g. Marcus" autocomplete="given-name">
+        <p class="field-error" id="fn-err"></p>
+      </div>
+      <div class="field">
+        <label>Last Name</label>
+        <input type="text" id="last-name" placeholder="e.g. Reid" autocomplete="family-name">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Display Name</label>
+      <p class="field-hint">How you appear on scorecards. Auto-filled from your name.</p>
+      <input type="text" id="display-name" placeholder="e.g. Marcus R" maxlength="20">
+      <p class="field-error" id="dn-err"></p>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-next" id="btn0">Continue →</button>
+    </div>
+  </div>
+
+  <!-- Step 1: Golf profile -->
+  <div class="step-panel" id="step1">
+    <p class="section-tag">Profile Setup · Step 2 of 3</p>
+    <h1 class="page-title">Your golf profile</h1>
+    <p class="page-sub">Used to set your handicap multiplier in every round.</p>
+
+    <div class="field">
+      <label>Handicap Index</label>
+      <p class="field-hint">Your official handicap (or best estimate). Determines your scoring multiplier.</p>
+      <input type="number" id="handicap" placeholder="e.g. 12" min="0" max="54" step="0.1">
+      <p class="field-error" id="hcp-err"></p>
+    </div>
+
+    <div class="field">
+      <label>Multiplier Tier</label>
+      <p class="field-hint">Auto-selected based on your handicap. Tap to override.</p>
+      <div class="hdcp-grid">
+        <div class="hdcp-tile" data-mult="1.5" data-range="0-6" onclick="selectTile(this)">
+          <div class="hdcp-range">Scratch–6</div>
+          <div class="hdcp-mult">1.5×</div>
+          <div class="hdcp-label">Low</div>
+        </div>
+        <div class="hdcp-tile" data-mult="1.75" data-range="7-13" onclick="selectTile(this)">
+          <div class="hdcp-range">7–13</div>
+          <div class="hdcp-mult">1.75×</div>
+          <div class="hdcp-label">Mid</div>
+        </div>
+        <div class="hdcp-tile" data-mult="2.0" data-range="14+" onclick="selectTile(this)">
+          <div class="hdcp-range">14+</div>
+          <div class="hdcp-mult">2.0×</div>
+          <div class="hdcp-label">High</div>
+        </div>
+        <div class="hdcp-tile" data-mult="custom" onclick="selectTile(this)">
+          <div class="hdcp-range">Custom</div>
+          <div class="hdcp-mult" style="font-size:1.1rem; padding-top:4px;">Set<br>own</div>
+          <div class="hdcp-label">Override</div>
+        </div>
+      </div>
+      <p class="field-error" id="tier-err"></p>
+    </div>
+
+    <div class="field" id="custom-mult-field" style="display:none;">
+      <label>Custom Multiplier</label>
+      <input type="number" id="custom-mult" placeholder="e.g. 1.5" min="1" max="3" step="0.25">
+    </div>
+
+    <div class="field">
+      <label>Home Course <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:0.78rem;">(optional)</span></label>
+      <input type="text" id="home-course" placeholder="e.g. Wentworth Club">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep(0)">← Back</button>
+      <button class="btn-next" id="btn1">Continue →</button>
+      <button class="btn-skip" onclick="goStep(2)">Skip for now</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Notifications -->
+  <div class="step-panel" id="step2">
+    <p class="section-tag">Profile Setup · Step 3 of 3</p>
+    <h1 class="page-title">You're all set</h1>
+    <p class="page-sub">One last thing — where would you like us to reach you?</p>
+
+    <div class="field">
+      <label>Phone Number <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:0.78rem;">(optional)</span></label>
+      <p class="field-hint">For score nudges and round reminders. Never shared.</p>
+      <input type="tel" id="phone" placeholder="+44 7700 900000" autocomplete="tel">
+    </div>
+
+    <div class="field">
+      <label>Preferred Notification</label>
+      <select id="notif-pref">
+        <option value="email">Email only</option>
+        <option value="both">Email + SMS</option>
+        <option value="none">None for now</option>
+      </select>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep(1)">← Back</button>
+      <button class="btn-next" id="btn2">Save profile →</button>
+    </div>
+  </div>
+
+  <!-- Complete -->
+  <div class="step-panel" id="step-complete">
+    <div class="complete-card">
+      <div class="complete-icon">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <path d="M7 18L14 25L29 10" stroke="#1B3D2A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 class="complete-title">Profile complete!</h2>
+      <p class="complete-sub">You're ready to play. Start a round, join an existing game, or explore the leaderboard.</p>
+      <div class="cta-row">
+        <a href="round.html" class="btn-primary-gold">Start a Round</a>
+        <a href="index.html" class="btn-outline-green">Go to Home</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentStep = 0;
+let selectedMult = null;
+let userId = null;
+
+const STEPS = 3;
+const PROG  = [33, 66, 100];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = await auth.requireAuth('login.html');
+  userId = session.user.id;
+
+  // Load existing profile if any
+  const { data: profile } = await auth.getProfile(userId);
+  if (profile) {
+    if (profile.first_name)   document.getElementById('first-name').value  = profile.first_name;
+    if (profile.last_name)    document.getElementById('last-name').value   = profile.last_name;
+    if (profile.display_name) document.getElementById('display-name').value= profile.display_name;
+    if (profile.handicap_index !== null) {
+      document.getElementById('handicap').value = profile.handicap_index;
+      autoSelectTier(profile.handicap_index);
+    }
+    if (profile.home_course)  document.getElementById('home-course').value = profile.home_course;
+    if (profile.phone)        document.getElementById('phone').value       = profile.phone;
+  }
+
+  // Avatar preview live update
+  ['first-name','last-name'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateAvatar);
+  });
+
+  // Auto-fill display name
+  document.getElementById('first-name').addEventListener('input', autofillDisplay);
+  document.getElementById('last-name').addEventListener('input', autofillDisplay);
+
+  // Auto-select tier from handicap input
+  document.getElementById('handicap').addEventListener('input', () => {
+    const val = parseFloat(document.getElementById('handicap').value);
+    if (!isNaN(val)) autoSelectTier(val);
+  });
+
+  document.getElementById('btn0').addEventListener('click', handleStep0);
+  document.getElementById('btn1').addEventListener('click', handleStep1);
+  document.getElementById('btn2').addEventListener('click', handleStep2);
+
+  updateAvatar();
+});
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+function updateAvatar() {
+  const fn = document.getElementById('first-name').value.trim();
+  const ln = document.getElementById('last-name').value.trim();
+  const initials = (fn[0] || '') + (ln[0] || '') || '??';
+  document.getElementById('avatar-preview').textContent = initials.toUpperCase();
+}
+
+function autofillDisplay() {
+  const fn = document.getElementById('first-name').value.trim();
+  const ln = document.getElementById('last-name').value.trim();
+  if (fn) {
+    document.getElementById('display-name').value = ln
+      ? fn + ' ' + ln[0] + '.'
+      : fn;
+  }
+}
+
+// ── Tier tiles ────────────────────────────────────────────────────────────────
+function autoSelectTier(hcp) {
+  const tiles = document.querySelectorAll('.hdcp-tile');
+  tiles.forEach(t => t.classList.remove('selected'));
+  if (hcp <= 6)  tiles[0].classList.add('selected'), selectedMult = 1.5;
+  else if (hcp <= 13) tiles[1].classList.add('selected'), selectedMult = 1.75;
+  else           tiles[2].classList.add('selected'), selectedMult = 2.0;
+  document.getElementById('custom-mult-field').style.display = 'none';
+}
+
+function selectTile(el) {
+  document.querySelectorAll('.hdcp-tile').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  if (el.dataset.mult === 'custom') {
+    selectedMult = 'custom';
+    document.getElementById('custom-mult-field').style.display = 'block';
+  } else {
+    selectedMult = parseFloat(el.dataset.mult);
+    document.getElementById('custom-mult-field').style.display = 'none';
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function goStep(n) {
+  document.querySelectorAll('.step-panel').forEach((p, i) => {
+    p.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.step-nav-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === n);
+    d.classList.toggle('done', i < n);
+  });
+  document.getElementById('progress-fill').style.width = PROG[n] + '%';
+  document.getElementById('topbar-step').textContent = `Step ${n + 1} of ${STEPS}`;
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Step handlers ─────────────────────────────────────────────────────────────
+function handleStep0() {
+  const fn = document.getElementById('first-name').value.trim();
+  const dn = document.getElementById('display-name').value.trim();
+  let ok = true;
+
+  if (!fn) {
+    showFieldErr('fn-err', 'Enter your first name.');
+    ok = false;
+  } else { showFieldErr('fn-err', ''); }
+
+  if (!dn) {
+    showFieldErr('dn-err', 'Enter a display name.');
+    ok = false;
+  } else { showFieldErr('dn-err', ''); }
+
+  if (ok) goStep(1);
+}
+
+function handleStep1() {
+  const hcp = document.getElementById('handicap').value;
+  let ok = true;
+
+  if (!hcp) {
+    showFieldErr('hcp-err', 'Enter your handicap index.');
+    ok = false;
+  } else { showFieldErr('hcp-err', ''); }
+
+  if (!selectedMult) {
+    showFieldErr('tier-err', 'Select a multiplier tier.');
+    ok = false;
+  } else { showFieldErr('tier-err', ''); }
+
+  if (selectedMult === 'custom') {
+    const cm = parseFloat(document.getElementById('custom-mult').value);
+    if (isNaN(cm) || cm < 1 || cm > 3) {
+      showFieldErr('tier-err', 'Custom multiplier must be between 1 and 3.');
+      ok = false;
+    }
+  }
+
+  if (ok) goStep(2);
+}
+
+async function handleStep2() {
+  const btn = document.getElementById('btn2');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const fn  = document.getElementById('first-name').value.trim();
+    const ln  = document.getElementById('last-name').value.trim();
+    const dn  = document.getElementById('display-name').value.trim();
+    const hcp = parseFloat(document.getElementById('handicap').value) || null;
+    const mult = selectedMult === 'custom'
+      ? parseFloat(document.getElementById('custom-mult').value)
+      : selectedMult;
+    const course = document.getElementById('home-course').value.trim();
+    const phone  = document.getElementById('phone').value.trim();
+    const notif  = document.getElementById('notif-pref').value;
+
+    await auth.upsertProfile(userId, {
+      first_name:      fn,
+      last_name:       ln,
+      display_name:    dn,
+      handicap_index:  hcp,
+      multiplier:      mult,
+      home_course:     course || null,
+      phone:           phone || null,
+      notif_pref:      notif,
+      profile_complete: true,
+    });
+
+    // Show complete state
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step-complete').classList.add('active');
+    document.getElementById('progress-fill').style.width = '100%';
+    document.querySelectorAll('.step-nav-dot').forEach(d => d.classList.add('done'));
+    document.getElementById('topbar-step').textContent = 'Complete!';
+
+  } catch (err) {
+    showToast(err.message || 'Failed to save profile. Try again.');
+    btn.disabled = false;
+    btn.textContent = 'Save profile →';
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showFieldErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>

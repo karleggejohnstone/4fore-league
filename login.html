@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In · 4FORE League</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<style>
+  :root {
+    --cream:  #F5F0E8;
+    --cream2: #EDE8DF;
+    --green:  #1B3D2A;
+    --green2: #2A5C3F;
+    --gold:   #C9A84C;
+    --text:   #1A1A1A;
+    --muted:  #6B6B6B;
+    --error:  #B91C1C;
+    --border: #D6CFC4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ── LEFT PANEL ── */
+  .panel-brand {
+    background: var(--green);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 56px 64px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-brand::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    left: -60px;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%);
+  }
+
+  .brand-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  .brand-logo span { color: #3ddc84; }
+
+  .brand-hero { position: relative; z-index: 1; }
+
+  .brand-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.7);
+    margin-bottom: 16px;
+  }
+
+  .brand-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 5vw, 5rem);
+    line-height: 0.95;
+    color: var(--cream);
+    margin-bottom: 24px;
+  }
+
+  .brand-headline em { color: var(--gold); font-style: normal; }
+
+  .brand-body {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: rgba(245,240,232,0.65);
+    max-width: 320px;
+  }
+
+  .brand-footer {
+    font-size: 0.8rem;
+    color: rgba(245,240,232,0.3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .panel-form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 64px;
+  }
+
+  .form-inner {
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .form-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    color: var(--green);
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+  }
+
+  .form-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 36px;
+  }
+
+  .form-sub a { color: var(--green); font-weight: 500; text-decoration: none; }
+  .form-sub a:hover { text-decoration: underline; }
+
+  .field { margin-bottom: 20px; }
+
+  .field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus { border-color: var(--green); }
+
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .field-row label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  .field-row a {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .field-row a:hover { color: var(--green); }
+
+  .field-error {
+    font-size: 0.78rem;
+    color: var(--error);
+    margin-top: 4px;
+    display: none;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: var(--cream);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+
+  .btn-submit:hover:not(:disabled) { background: var(--green2); transform: translateY(-1px); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0;
+    color: var(--border);
+    font-size: 0.78rem;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .signup-link {
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+
+  .signup-link a { color: var(--green); font-weight: 500; text-decoration: none; }
+  .signup-link a:hover { text-decoration: underline; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--error);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: transform 0.3s;
+    z-index: 999;
+    max-width: 360px;
+    text-align: center;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--green); }
+
+  @media (max-width: 768px) {
+    body { grid-template-columns: 1fr; }
+    .panel-brand { display: none; }
+    .panel-form { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LEFT -->
+<div class="panel-brand">
+  <a href="index.html" class="brand-logo">4<span>FORE</span></a>
+
+  <div class="brand-hero">
+    <p class="brand-eyebrow">Welcome back</p>
+    <h1 class="brand-headline">Good to<br>have you <em>back.</em></h1>
+    <p class="brand-body">Your rounds, your league, your leaderboard. Sign in and pick up where you left off.</p>
+  </div>
+
+  <p class="brand-footer">4FORE League · Never Lay Up</p>
+</div>
+
+<!-- RIGHT -->
+<div class="panel-form">
+  <div class="form-inner">
+
+    <h1 class="form-title">Sign in</h1>
+    <p class="form-sub">New here? <a href="signup.html">Create a free account</a></p>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      <p class="field-error" id="email-err"></p>
+    </div>
+
+    <div class="field">
+      <div class="field-row">
+        <label>Password</label>
+        <a href="forgot-password.html">Forgot password?</a>
+      </div>
+      <input type="password" id="password" placeholder="Your password" autocomplete="current-password">
+      <p class="field-error" id="pw-err"></p>
+    </div>
+
+    <button class="btn-submit" id="btn-signin">Sign In</button>
+
+    <div class="divider">or</div>
+
+    <p class="signup-link">Don't have an account? <a href="signup.html">Sign up free</a></p>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  await auth.redirectIfAuthed('index.html');
+
+  document.getElementById('btn-signin').addEventListener('click', handleSignIn);
+
+  ['email', 'password'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSignIn();
+    });
+  });
+});
+
+async function handleSignIn() {
+  const email = document.getElementById('email').value.trim();
+  const pw    = document.getElementById('password').value;
+  let ok = true;
+
+  if (!email) {
+    showErr('email-err', 'Enter your email.');
+    ok = false;
+  } else { showErr('email-err', ''); }
+
+  if (!pw) {
+    showErr('pw-err', 'Enter your password.');
+    ok = false;
+  } else { showErr('pw-err', ''); }
+
+  if (!ok) return;
+
+  const btn = document.getElementById('btn-signin');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  const { error } = await auth.signIn(email, pw);
+
+  if (error) {
+    showToast(error.message === 'Invalid login credentials'
+      ? 'Incorrect email or password.'
+      : error.message);
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+    return;
+  }
+
+  // First-time welcome email trigger (best-effort)
+  const user = await auth.getUser();
+  if (user) {
+    const { data: profile } = await auth.getProfile(user.id);
+    if (!profile?.first_login_at) {
+      await auth.upsertProfile(user.id, { first_login_at: new Date().toISOString() });
+      await auth.sendEmail('welcome', email, { name: email.split('@')[0] });
+    }
+  }
+
+  window.location.href = 'index.html';
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function showToast(msg, success = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (success ? ' success' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up · 4FORE League</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<style>
+  :root {
+    --cream:  #F5F0E8;
+    --cream2: #EDE8DF;
+    --green:  #1B3D2A;
+    --green2: #2A5C3F;
+    --gold:   #C9A84C;
+    --gold2:  #E8C96A;
+    --text:   #1A1A1A;
+    --muted:  #6B6B6B;
+    --error:  #B91C1C;
+    --border: #D6CFC4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ── LEFT PANEL ── */
+  .panel-brand {
+    background: var(--green);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 56px 64px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-brand::before {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    right: -80px;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+  }
+
+  .brand-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  .brand-logo span { color: #3ddc84; }
+
+  .brand-hero {
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.7);
+    margin-bottom: 16px;
+  }
+
+  .brand-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 5vw, 5rem);
+    line-height: 0.95;
+    color: var(--cream);
+    margin-bottom: 24px;
+  }
+
+  .brand-headline em {
+    color: var(--gold);
+    font-style: normal;
+  }
+
+  .brand-body {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: rgba(245,240,232,0.65);
+    max-width: 320px;
+  }
+
+  .brand-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .brand-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: rgba(245,240,232,0.75);
+  }
+
+  .brand-features li::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .brand-footer {
+    font-size: 0.8rem;
+    color: rgba(245,240,232,0.3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .panel-form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 64px;
+    overflow-y: auto;
+  }
+
+  .form-inner {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .form-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    color: var(--green);
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+  }
+
+  .form-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 36px;
+  }
+
+  .form-sub a {
+    color: var(--green);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .form-sub a:hover { text-decoration: underline; }
+
+  /* Steps */
+  .step-indicator {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 32px;
+  }
+
+  .step-dot {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+
+  .step-dot.active { background: var(--green); }
+  .step-dot.done   { background: var(--gold); }
+
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  /* Fields */
+  .field { margin-bottom: 20px; }
+
+  .field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus { border-color: var(--green); }
+  .field input.error { border-color: var(--error); }
+
+  .field-error {
+    font-size: 0.78rem;
+    color: var(--error);
+    margin-top: 4px;
+    display: none;
+  }
+
+  /* Consent */
+  .consent-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+
+  .consent-block input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    accent-color: var(--green);
+  }
+
+  .consent-block span {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .consent-block a {
+    color: var(--green);
+    text-decoration: none;
+  }
+
+  /* Stripe card element */
+  .card-element-wrap {
+    padding: 12px 14px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    transition: border-color 0.2s;
+  }
+
+  .card-element-wrap.focused { border-color: var(--green); }
+
+  .card-note {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-note svg { flex-shrink: 0; }
+
+  /* Button */
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: var(--cream);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+
+  .btn-submit:hover:not(:disabled) { background: var(--green2); transform: translateY(-1px); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-back {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    margin-top: 8px;
+    margin-right: 8px;
+  }
+
+  .btn-back:hover { border-color: var(--green); color: var(--green); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--error);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: transform 0.3s;
+    z-index: 999;
+    max-width: 360px;
+    text-align: center;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--green); }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: var(--border);
+    font-size: 0.78rem;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Trial badge */
+  .trial-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(27,61,42,0.08);
+    border: 1px solid rgba(27,61,42,0.2);
+    color: var(--green);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    body { grid-template-columns: 1fr; }
+    .panel-brand { display: none; }
+    .panel-form { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LEFT: Brand -->
+<div class="panel-brand">
+  <a href="index.html" class="brand-logo">4<span>FORE</span></a>
+
+  <div class="brand-hero">
+    <p class="brand-eyebrow">Never Lay Up</p>
+    <h1 class="brand-headline">Play bold.<br><em>Score big.</em></h1>
+    <p class="brand-body">The competitive golf scoring system built for how you actually play. Four scoring layers. Real-time multiplayer. Moments you'll never forget.</p>
+    <ul class="brand-features">
+      <li>Live multiplayer scoring with friends</li>
+      <li>Handicap multipliers & declaration bonuses</li>
+      <li>Moment bonuses — Hole-in-One worth +44 pts</li>
+      <li>Season leaderboards & round history</li>
+    </ul>
+  </div>
+
+  <p class="brand-footer">4FORE League · Never Lay Up</p>
+</div>
+
+<!-- RIGHT: Form -->
+<div class="panel-form">
+  <div class="form-inner">
+
+    <div class="trial-badge">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="#1B3D2A"/><path d="M6 3v3.5L8 8" stroke="#1B3D2A" stroke-width="1.2" stroke-linecap="round"/></svg>
+      14-day free trial · No charge today
+    </div>
+
+    <h1 class="form-title">Create account</h1>
+    <p class="form-sub">Already have one? <a href="login.html">Sign in</a></p>
+
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot0"></div>
+      <div class="step-dot" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+    </div>
+
+    <!-- Step 1: Account -->
+    <div class="step-panel active" id="step0">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+        <p class="field-error" id="email-err"></p>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Min. 8 characters" autocomplete="new-password">
+        <p class="field-error" id="pw-err"></p>
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input type="password" id="password2" placeholder="Repeat password" autocomplete="new-password">
+        <p class="field-error" id="pw2-err"></p>
+      </div>
+      <button class="btn-submit" id="btn-step0">Continue</button>
+    </div>
+
+    <!-- Step 2: Consent -->
+    <div class="step-panel" id="step1">
+      <p style="font-size:0.9rem; color:var(--muted); margin-bottom:24px; line-height:1.6;">
+        Almost there. Review the terms and let us know your comms preferences.
+      </p>
+      <label class="consent-block">
+        <input type="checkbox" id="terms-consent">
+        <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. Required to use 4FORE League.</span>
+      </label>
+      <label class="consent-block">
+        <input type="checkbox" id="marketing-consent">
+        <span>Send me updates, new features, and league announcements by email. You can unsubscribe anytime.</span>
+      </label>
+      <p class="field-error" id="consent-err"></p>
+
+      <div class="divider">then</div>
+
+      <div>
+        <label style="display:block; font-size:0.8rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:var(--green); margin-bottom:8px;">Card Details</label>
+        <div class="card-element-wrap" id="card-wrap">
+          <div id="card-element"></div>
+        </div>
+        <p class="card-note">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="0.5" y="0.5" width="12" height="12" rx="2" stroke="#6B6B6B"/><path d="M4 6.5L5.8 8.5L9 4.5" stroke="#6B6B6B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Card saved for after your trial. No charge today.
+        </p>
+        <p class="field-error" id="card-err"></p>
+      </div>
+
+      <button class="btn-back" id="btn-back1">← Back</button>
+      <button class="btn-submit" id="btn-step1" style="width:auto; padding:14px 32px; margin-top:0;">Create Account</button>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div class="step-panel" id="step2">
+      <div style="text-align:center; padding: 24px 0;">
+        <div style="width:64px;height:64px;background:rgba(27,61,42,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M6 14L11 19L22 8" stroke="#1B3D2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--green);margin-bottom:8px;">You're in!</h2>
+        <p style="color:var(--muted);font-size:0.9rem;line-height:1.6;max-width:280px;margin:0 auto 24px;">Your trial has started. Let's set up your golf profile.</p>
+        <a href="profile-setup.html" class="btn-submit" style="display:inline-block;text-decoration:none;width:auto;padding:14px 40px;">Set up profile →</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Init ────────────────────────────────────────────────────────────────────
+const STRIPE_PK = 'pk_test_51T3KCNCqxSWVge4cVAnglyIbJJFtfWhJPrMTe5BzXRSENK5zbgulVXiSnjiGQmKMSX3poWKJ4PHxXavLOCPSqXrO00O18bkxlr';
+let stripe, cardElement;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Redirect if already signed in
+  await auth.redirectIfAuthed('index.html');
+
+  // Init Stripe
+  stripe = Stripe(STRIPE_PK);
+  const elements = stripe.elements({
+    fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400&display=swap' }],
+  });
+  cardElement = elements.create('card', {
+    style: {
+      base: {
+        fontFamily: '"DM Sans", sans-serif',
+        fontSize: '15px',
+        color: '#1A1A1A',
+        '::placeholder': { color: '#B0A89C' },
+      },
+    },
+  });
+  cardElement.mount('#card-element');
+  cardElement.on('focus', () => document.getElementById('card-wrap').classList.add('focused'));
+  cardElement.on('blur',  () => document.getElementById('card-wrap').classList.remove('focused'));
+
+  // Step 0 → 1
+  document.getElementById('btn-step0').addEventListener('click', validateStep0);
+
+  // Back
+  document.getElementById('btn-back1').addEventListener('click', () => goStep(0));
+
+  // Submit
+  document.getElementById('btn-step1').addEventListener('click', handleSignup);
+
+  // Enter key on step 0
+  ['email','password','password2'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') validateStep0();
+    });
+  });
+});
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function goStep(n) {
+  document.querySelectorAll('.step-panel').forEach((p, i) => {
+    p.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === n);
+    d.classList.toggle('done', i < n);
+  });
+}
+
+// ── Validation ───────────────────────────────────────────────────────────────
+function setErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function validateStep0() {
+  let ok = true;
+  const email = document.getElementById('email').value.trim();
+  const pw    = document.getElementById('password').value;
+  const pw2   = document.getElementById('password2').value;
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setErr('email-err', 'Enter a valid email address.');
+    ok = false;
+  } else { setErr('email-err', ''); }
+
+  if (pw.length < 8) {
+    setErr('pw-err', 'Password must be at least 8 characters.');
+    ok = false;
+  } else { setErr('pw-err', ''); }
+
+  if (pw !== pw2) {
+    setErr('pw2-err', 'Passwords do not match.');
+    ok = false;
+  } else { setErr('pw2-err', ''); }
+
+  if (ok) goStep(1);
+}
+
+// ── Signup ───────────────────────────────────────────────────────────────────
+async function handleSignup() {
+  const termsChecked = document.getElementById('terms-consent').checked;
+  if (!termsChecked) {
+    setErr('consent-err', 'You must agree to the Terms of Service to continue.');
+    return;
+  }
+  setErr('consent-err', '');
+
+  const btn = document.getElementById('btn-step1');
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+
+  const email = document.getElementById('email').value.trim();
+  const pw    = document.getElementById('password').value;
+  const marketingConsent = document.getElementById('marketing-consent').checked;
+
+  try {
+    // 1. Create Supabase auth user
+    const { data: authData, error: authErr } = await auth.signUp(email, pw);
+    if (authErr) throw authErr;
+    const userId = authData.user.id;
+
+    // 2. Create Stripe customer + SetupIntent
+    const { clientSecret, customerId } = await auth.createSetupIntent(email, userId);
+
+    // 3. Collect card via Stripe.js
+    const { error: stripeErr } = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: { card: cardElement },
+    });
+    if (stripeErr) {
+      setErr('card-err', stripeErr.message);
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+      return;
+    }
+
+    // 4. Save profile + stripe_customer_id + consent
+    await auth.upsertProfile(userId, {
+      email,
+      stripe_customer_id: customerId,
+      trial_started_at: new Date().toISOString(),
+      trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString(),
+    });
+
+    await window.sb.from('marketing_consent').insert({
+      user_id: userId,
+      email_marketing: marketingConsent,
+      consented_at: new Date().toISOString(),
+    });
+
+    // 5. Send welcome email
+    await auth.sendEmail('welcome', email, { name: email.split('@')[0] });
+
+    goStep(2);
+
+  } catch (err) {
+    showToast(err.message || 'Something went wrong. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg, success = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (success ? ' success' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>

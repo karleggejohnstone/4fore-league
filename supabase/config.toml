@@ -1,0 +1,28 @@
+# supabase/config.toml — used by the Supabase CLI for local dev
+# https://supabase.com/docs/guides/cli/config
+
+[api]
+port = 54321
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://4fore-league.vercel.app", "https://www.4fore.golf"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false   # set to true in production once SMTP is configured
