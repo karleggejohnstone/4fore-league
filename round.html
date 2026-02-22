@@ -914,13 +914,18 @@
 
       if (codeErr) throw codeErr;
 
-      // Insert all players
+      // Get current user to tag the round creator
+      const { data: { session } } = await window.sb.auth.getSession();
+      const userId = session?.user?.id || null;
+
+      // Insert all players — tag player 0 (round creator) with user_id
       const playerRows = players.map((p, idx) => ({
         round_id:     roundId,
         player_index: idx,
         name:         p.name,
         multiplier:   p.mult,
         head_start:   p.hs,
+        user_id:      idx === 0 ? userId : null,
       }));
 
       const { error: playersErr } = await window.sb

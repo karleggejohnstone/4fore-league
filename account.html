@@ -1380,13 +1380,29 @@ function cancelSubscription(btn) {
 
 // ── Round History ─────────────────────────────────────────────────────────────
 async function loadRounds() {
+  // Find rounds where this user was a player
+  const { data: playerRows } = await window.sb
+    .from('round_players')
+    .select('round_id')
+    .eq('user_id', currentUser.id);
+
+  if (!playerRows || playerRows.length === 0) {
+    document.getElementById('hs-total').textContent     = '0';
+    document.getElementById('hs-best').textContent      = '—';
+    document.getElementById('hs-best-hole').textContent = '—';
+    return;
+  }
+
+  const roundIds = playerRows.map(r => r.round_id);
+
   const { data: rounds, error } = await window.sb
     .from('rounds')
     .select(`
       id, created_at, code, status,
-      round_players(player_index, name, multiplier),
+      round_players(player_index, name, multiplier, user_id),
       hole_scores(player_index, hole_number, strokes, declaration, hit, moments_hio, moments_sand, moments_chip, moments_pap, par)
     `)
+    .in('id', roundIds)
     .order('created_at', { ascending: false });
 
   if (error || !rounds || rounds.length === 0) {
