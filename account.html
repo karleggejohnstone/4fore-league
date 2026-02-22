@@ -1522,31 +1522,57 @@ function closeReplay() {
 
 // ── Career Stats ──────────────────────────────────────────────────────────────
 async function loadCareerStats() {
+  if (!userRounds || userRounds.length === 0) return;
+
+  const roundIds = userRounds.map(r => r.id);
+
+  // Get this user's player_index for each round
+  const myPlayerIndices = {};
+  userRounds.forEach(r => {
+    const me = (r.round_players || []).find(p => p.user_id === currentUser.id);
+    if (me) myPlayerIndices[r.id] = me.player_index;
+  });
+
   const { data: scores } = await window.sb
     .from('hole_scores')
-    .select('declaration, hit, moments_hio, moments_sand, moments_chip, moments_pap, strokes, par');
+    .select('round_id, player_index, declaration, hit, moments_hio, moments_sand, moments_chip, moments_pap, strokes, par')
+    .in('round_id', roundIds);
 
   if (!scores || scores.length === 0) return;
 
-  const totalDecl   = scores.filter(s => s.declaration && s.declaration !== 'none').length;
-  const hitDecl     = scores.filter(s => s.hit === true).length;
-  const declRate    = totalDecl > 0 ? Math.round((hitDecl / totalDecl) * 100) : 0;
+  // Filter to only this user's scores
+  const myScores = scores.filter(s => myPlayerIndices[s.round_id] === s.player_index);
 
-  const hio  = scores.filter(s => s.moments_hio).length;
-  const sand = scores.filter(s => s.moments_sand).length;
-  const chip = scores.filter(s => s.moments_chip).length;
-  const pap  = scores.filter(s => s.moments_pap).length;
+  if (myScores.length === 0) return;
+
+  // Compute per-round totals for average
+  const roundTotals = {};
+  myScores.forEach(s => {
+    if (!roundTotals[s.round_id]) roundTotals[s.round_id] = 0;
+    roundTotals[s.round_id] += calcHolePts(s);
+  });
+  const totals = Object.values(roundTotals);
+  const avgScore = totals.length > 0 ? (totals.reduce((a,b) => a+b, 0) / totals.length).toFixed(1) : '—';
+
+  const totalDecl = myScores.filter(s => s.declaration && s.declaration !== 'none').length;
+  const hitDecl   = myScores.filter(s => s.hit === true).length;
+  const declRate  = totalDecl > 0 ? Math.round((hitDecl / totalDecl) * 100) : 0;
+
+  const hio  = myScores.filter(s => s.moments_hio).length;
+  const sand = myScores.filter(s => s.moments_sand).length;
+  const chip = myScores.filter(s => s.moments_chip).length;
+  const pap  = myScores.filter(s => s.moments_pap).length;
 
   const declCounts = {};
-  scores.forEach(s => {
+  myScores.forEach(s => {
     if (s.declaration && s.declaration !== 'none') {
       declCounts[s.declaration] = (declCounts[s.declaration] || 0) + 1;
     }
   });
   const favDecl = Object.entries(declCounts).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
 
-  document.getElementById('cs-rounds').textContent    = userRounds.length || '—';
-  document.getElementById('cs-avg').textContent       = '—';
+  document.getElementById('cs-rounds').textContent    = userRounds.length;
+  document.getElementById('cs-avg').textContent       = avgScore;
   document.getElementById('cs-decl-rate').textContent = totalDecl > 0 ? `${declRate}%` : '—';
   document.getElementById('cs-best-hole').textContent = document.getElementById('hs-best-hole').textContent;
   document.getElementById('cs-fav-decl').textContent  = favDecl;
