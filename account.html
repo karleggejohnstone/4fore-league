@@ -1346,7 +1346,7 @@ function loadSubscription(profile) {
 }
 
 async function openBillingPortal() {
-  const profile = await auth.getProfile(currentUser.id);
+  const { data: profile } = await auth.getProfile(currentUser.id);
   if (!profile?.stripe_customer_id) {
     showToast('No billing account found.', true);
     return;
