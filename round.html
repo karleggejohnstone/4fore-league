@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
+<script src="auth.js"></script>
 <style>
   :root {
     --green: #1a4a2e;
@@ -577,9 +578,19 @@
 </nav>
 <script>
   (async () => {
-    const session = await auth.getSession();
+    const session = await auth.requireAuth();
     const link = document.getElementById('nav-auth-link');
-    if (session) { link.href = 'account.html'; link.textContent = 'Account'; }
+    if (session) {
+      link.href = 'account.html';
+      link.textContent = 'Account';
+      // Show Dashboard link for commissioner tier users
+      const isComm = await auth.canAccess('commissioner');
+      if (isComm) {
+        const li = document.createElement('li');
+        li.innerHTML = '<a href="dashboard.html" style="color:var(--gold);">Dashboard</a>';
+        link.closest('li').before(li);
+      }
+    }
   })();
 </script>
 
@@ -897,7 +908,7 @@
       // Insert round with placeholder code (must satisfy NOT NULL + length=4 check)
       const { data: roundData, error: roundErr } = await window.sb
         .from('rounds')
-        .insert({ status: 'active', code: 'INIT' })
+        .insert({ status: 'active', code: 'INIT', commissioner_user_id: userId })
         .select('id')
         .single();
 

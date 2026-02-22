@@ -80,6 +80,20 @@
       .upsert({ id: userId, ...fields, updated_at: new Date().toISOString() });
   }
 
+  /**
+   * Check if current user has access to a given tier or above.
+   * Tier order: free < player_pro < commissioner
+   */
+  async function canAccess(requiredTier) {
+    const user = await getUser();
+    if (!user) return false;
+    const { data } = await getProfile(user.id);
+    const order = ['free', 'player_pro', 'commissioner'];
+    const userIdx = order.indexOf(data?.subscription_tier || 'free');
+    const reqIdx  = order.indexOf(requiredTier);
+    return userIdx >= reqIdx;
+  }
+
   // ── Stripe SetupIntent ─────────────────────────────────────────────────────
 
   /**
@@ -123,5 +137,6 @@
     upsertProfile,
     createSetupIntent,
     sendEmail,
+    canAccess,
   };
 })();

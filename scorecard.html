@@ -860,6 +860,9 @@
   const urlParams   = new URLSearchParams(window.location.search);
   let roundId       = urlParams.get('round');
   let roundLocked   = false;
+  let declLimits    = {};       // { dtg: 2, gfg2: 2, ... } from rounds.decl_limits
+  let commissionerUserId = null;
+  let broadcastCh   = null;
 
   // Legacy URL param support
   const legacyCount = parseInt(urlParams.get('p')) || 0;
@@ -868,7 +871,15 @@
   const players  = [];
   let currentHole = 0;
   let currentView = 'hole';
-  let holeData   = [];
+  let holeData    = [];
+  let myPlayerIndex = -1;  // -1 = watch only, 0+ = identified player
+  let isCommissioner = false;
+
+  // Declaration usage map: usageMap[playerIdx][declType] = count
+  let usageMap = {};
+
+  // Track pending vote prompts: { playerIndex, holeNumber, declaration, playerName }
+  let pendingVote = null;
 
   function buildHoleData() {
     return Array.from({ length: 18 }, () => ({
@@ -876,7 +887,9 @@
       players: players.map(() => ({
         strokes:     null,
         declaration: 'none',
+        called_score: null,
         hit:         null,
+        awaitingVote: false,
         moments: { hio: false, sand: false, chip: false, pap: false }
       }))
     }));
@@ -893,6 +906,14 @@
     return 0;
   }
 
+  // CYS called score → stroke diff mapping
+  const CYS_DIFF = { albatross: -3, eagle: -2, birdie: -1, par: 0, bogey: 1, double: 2 };
+
+  function resolveCysHit(pd, h) {
+    if (!pd.called_score || pd.strokes === null) return null;
+    return (pd.strokes - h.par) === CYS_DIFF[pd.called_score];
+  }
+
   function holeScore(holeIdx, playerIdx) {
     const h  = holeData[holeIdx];
     const pd = h.players[playerIdx];
@@ -900,8 +921,12 @@
     if (pd.strokes === null) return null;
     let pts = basePoints(pd.strokes, h.par);
     if (pd.declaration !== 'none') {
-      if (pd.hit === true)  pts = pts * p.mult;
-      else if (pd.hit === false) pts = pts + 0.5;
+      // CYS: auto-determine hit from score comparison; group vote can override via pd.hit
+      const effectiveHit = (pd.declaration === 'cys' && pd.called_score && pd.hit === null)
+        ? resolveCysHit(pd, h)
+        : pd.hit;
+      if (effectiveHit === true)  pts = pts * p.mult;
+      else if (effectiveHit === false) pts = pts + 0.5;
     }
     if (pd.moments.hio)  pts += 44;
     if (pd.moments.sand) pts += 3;
@@ -933,12 +958,35 @@
     { value: 'cys',      label: 'Call Your Score' },
   ];
 
-  function declarationsForPar(par) {
+  const DEFAULT_DECL_LIMIT = 2;
+
+  function getDeclLimit(declValue) {
+    return (declLimits && declLimits[declValue] != null)
+      ? declLimits[declValue]
+      : DEFAULT_DECL_LIMIT;
+  }
+
+  function isOverLimit(playerIdx, declValue) {
+    if (declValue === 'none') return false;
+    const used = usageMap[playerIdx]?.[declValue] || 0;
+    return used >= getDeclLimit(declValue);
+  }
+
+  function declarationsForPar(par, playerIdx) {
     return ALL_DECLARATIONS.filter(d => {
       if (d.value === 'dtg')  return par === 4;
       if (d.value === 'gfg2') return par === 5;
       return true;
-    });
+    }).map(d => ({
+      ...d,
+      overLimit: d.value !== 'none' && isOverLimit(playerIdx, d.value),
+    }));
+  }
+
+  // ── Edit permissions ──────────────────────────────────────────────
+  function canEdit(pi) {
+    if (isCommissioner) return true;
+    return pi === myPlayerIndex;
   }
 
   // ── Render leaderboard ────────────────────────────────────────────
@@ -976,20 +1024,47 @@
   // ── Render hole view ──────────────────────────────────────────────
   function renderHole(holeIdx) {
     const h = holeData[holeIdx];
-    const decls = declarationsForPar(h.par);
     const holeView = document.getElementById('holeView');
     const parBtns = [3, 4, 5].map(p =>
       `<button class="par-btn${h.par === p ? ' active' : ''}" data-par="${p}">${p}</button>`
     ).join('');
     const playerRows = players.map((player, pi) => {
-      const pd = h.players[pi];
-      const declOptions = decls.map(d =>
-        `<option value="${d.value}"${pd.declaration === d.value ? ' selected' : ''}>${d.label}</option>`
-      ).join('');
+      const pd    = h.players[pi];
+      const decls = declarationsForPar(h.par, pi);
+      const notMine = !canEdit(pi);
+
+      const declOptions = decls.map(d => {
+        const limitNote = d.overLimit ? ` (limit reached)` : '';
+        return `<option value="${d.value}"${pd.declaration === d.value ? ' selected' : ''}${d.overLimit ? ' disabled' : ''}>${d.label}${limitNote}</option>`;
+      }).join('');
+
+      const isCys = pd.declaration === 'cys';
       const declNotNone = pd.declaration !== 'none';
-      const hitMissHidden = declNotNone ? '' : 'style="display:none"';
+
+      // CYS second dropdown
+      const cysOptions = ['albatross','eagle','birdie','par','bogey','double'].map(v =>
+        `<option value="${v}"${pd.called_score === v ? ' selected' : ''}>${v.charAt(0).toUpperCase()+v.slice(1)}${v==='double'?' Bogey+':''}</option>`
+      ).join('');
+      const cysDropdown = isCys ? `
+        <div class="input-group">
+          <span class="input-label">Called Score</span>
+          <select class="cys-select" data-player="${pi}" data-hole="${holeIdx}">
+            <option value="">Select…</option>
+            ${cysOptions}
+          </select>
+        </div>` : '';
+
+      // Awaiting group vote banner (replaces hit/miss for non-CYS)
+      const awaitingBanner = pd.awaitingVote
+        ? `<div class="awaiting-vote-banner">⏳ Waiting for group confirmation…</div>`
+        : '';
+
+      // Hit/miss: hidden for CYS (auto-determined) or when awaiting vote
+      const showHitMiss = declNotNone && !isCys && !pd.awaitingVote;
+      const hitMissHidden = showHitMiss ? '' : 'style="display:none"';
       const hitActive  = pd.hit === true  ? ' active' : '';
       const missActive = pd.hit === false ? ' active' : '';
+
       const momentBtns = [
         { key: 'hio',  label: '⛳ Hole in One +44' },
         { key: 'sand', label: '🏖 Sand Save +3' },
@@ -998,12 +1073,15 @@
       ].map(m =>
         `<button class="moment-btn${pd.moments[m.key] ? ' active' : ''}" data-player="${pi}" data-moment="${m.key}">${m.label}</button>`
       ).join('');
+
       const score = holeScore(holeIdx, pi);
       const scoreDisplay = score !== null ? score + ' pts' : '—';
       const scoreClass = score !== null ? ' has-score' : '';
       const multLabel = player.mult === 1 ? 'Scratch' : player.mult + '×';
+      const notMineClass = notMine ? ' not-mine' : '';
+
       return `
-        <div class="player-scoring-row">
+        <div class="player-scoring-row${notMineClass}" data-player-row="${pi}">
           <div class="player-row-header">
             <div>
               <span class="player-label">${escHtml(player.name)}</span>
@@ -1021,6 +1099,8 @@
               <span class="input-label">Declaration</span>
               <select class="declaration-select" data-player="${pi}" data-hole="${holeIdx}">${declOptions}</select>
             </div>
+            ${cysDropdown}
+            ${awaitingBanner}
             <div class="input-group hit-miss-wrap" data-hm-player="${pi}" ${hitMissHidden}>
               <span class="input-label">Hit?</span>
               <div style="display:flex;gap:2px;">
@@ -1191,10 +1271,15 @@
   }
 
   // ── Save to Supabase ──────────────────────────────────────────────
-  async function saveHoleScore(holeIdx, playerIdx) {
+  async function saveHoleScore(holeIdx, playerIdx, opts = {}) {
     if (!roundId || roundLocked) return;
+    if (!canEdit(playerIdx)) return;
     const h  = holeData[holeIdx];
     const pd = h.players[playerIdx];
+
+    // Track previous moment states for broadcast detection
+    const prevMoments = opts.prevMoments || {};
+
     const row = {
       round_id:     roundId,
       player_index: playerIdx,
@@ -1202,6 +1287,7 @@
       par:          h.par,
       strokes:      pd.strokes,
       declaration:  pd.declaration,
+      called_score: pd.called_score,
       hit:          pd.hit,
       moments_hio:  pd.moments.hio,
       moments_sand: pd.moments.sand,
@@ -1213,8 +1299,53 @@
       .upsert(row, { onConflict: 'round_id,player_index,hole_number' });
     if (error) {
       console.warn('saveHoleScore failed:', error.message);
-      showToast('Score not saved — check connection', true);
+      if (error.message?.includes('Declaration limit')) {
+        showToast('Declaration limit reached — choose another', true);
+      } else {
+        showToast('Score not saved — check connection', true);
+      }
+      return;
     }
+
+    // Broadcast moment bonuses that were just turned ON
+    const momentDefs = [
+      { key: 'hio',  label: 'got a Hole in One', pts: 44 },
+      { key: 'sand', label: 'made a Sand Save',   pts: 3  },
+      { key: 'chip', label: 'chipped in',          pts: 2  },
+      { key: 'pap',  label: 'made Par After Penalty', pts: 2 },
+    ];
+    momentDefs.forEach(m => {
+      if (pd.moments[m.key] && !prevMoments[m.key] && broadcastCh) {
+        broadcastCh.send({
+          type: 'broadcast', event: 'moment',
+          payload: { playerName: players[playerIdx].name, moment: m.key, label: m.label, holeNumber: holeIdx + 1, points: m.pts },
+        });
+      }
+    });
+  }
+
+  // ── Broadcast a declaration for group voting ──────────────────────
+  function broadcastDeclaration(playerIdx, holeIdx) {
+    if (!broadcastCh || myPlayerIndex !== playerIdx) return;
+    const pd = holeData[holeIdx].players[playerIdx];
+    if (pd.declaration === 'none') return;
+
+    // For Short Cut: pre-shot confirmation needed before saving
+    const isShortcut = pd.declaration === 'shortcut';
+    broadcastCh.send({
+      type: 'broadcast', event: 'declaration',
+      payload: {
+        playerIndex:   playerIdx,
+        playerName:    players[playerIdx].name,
+        declaration:   pd.declaration,
+        calledScore:   pd.called_score,
+        holeNumber:    holeIdx + 1,
+        isPreShot:     isShortcut,
+        roundId,
+      },
+    });
+    holeData[holeIdx].players[playerIdx].awaitingVote = true;
+    renderHole(holeIdx);
   }
 
   // ── Apply a realtime score update ─────────────────────────────────
@@ -1224,14 +1355,17 @@
     if (!holeData.length || pi >= players.length) return;
     const h  = holeData[hi];
     const pd = h.players[pi];
-    h.par           = record.par;
-    pd.strokes      = record.strokes;
-    pd.declaration  = record.declaration || 'none';
-    pd.hit          = record.hit;
-    pd.moments.hio  = record.moments_hio;
-    pd.moments.sand = record.moments_sand;
-    pd.moments.chip = record.moments_chip;
-    pd.moments.pap  = record.moments_pap;
+    h.par            = record.par;
+    pd.strokes       = record.strokes;
+    pd.declaration   = record.declaration || 'none';
+    pd.called_score  = record.called_score || null;
+    pd.hit           = record.hit;
+    pd.moments.hio   = record.moments_hio;
+    pd.moments.sand  = record.moments_sand;
+    pd.moments.chip  = record.moments_chip;
+    pd.moments.pap   = record.moments_pap;
+    // If hit was resolved (vote came in), clear awaiting state
+    if (record.hit !== null && pd.awaitingVote) pd.awaitingVote = false;
     if (hi === currentHole) renderHole(currentHole);
     renderLeaderboard();
     renderPips();
@@ -1241,6 +1375,8 @@
   // ── Realtime subscription ─────────────────────────────────────────
   function subscribeRealtime() {
     if (!roundId) return;
+
+    // hole_scores changes
     window.sb
       .channel('hole_scores:' + roundId)
       .on('postgres_changes', {
@@ -1252,6 +1388,117 @@
         }
       })
       .subscribe();
+
+    // declaration_votes changes — resolve votes as they come in
+    window.sb
+      .channel('decl_votes:' + roundId)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'declaration_votes',
+        filter: 'round_id=eq.' + roundId,
+      }, payload => {
+        if (payload.new) checkVoteResolution(payload.new.player_index, payload.new.hole_number);
+      })
+      .subscribe();
+
+    // declaration_usage changes — keep usage map live
+    window.sb
+      .channel('decl_usage:' + roundId)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'declaration_usage',
+        filter: 'round_id=eq.' + roundId,
+      }, payload => {
+        if (payload.new) {
+          const { player_index, declaration_type, count } = payload.new;
+          if (!usageMap[player_index]) usageMap[player_index] = {};
+          usageMap[player_index][declaration_type] = count;
+          if (currentHole !== undefined) renderHole(currentHole);
+        }
+      })
+      .subscribe();
+
+    // Broadcast channel for declaration prompts and moment notifications
+    broadcastCh = window.sb.channel('broadcast:' + roundId);
+    broadcastCh
+      .on('broadcast', { event: 'declaration' }, ({ payload }) => {
+        if (payload.playerIndex !== myPlayerIndex) {
+          pendingVote = payload;
+          showVotePrompt(payload);
+        }
+      })
+      .on('broadcast', { event: 'moment' }, ({ payload }) => {
+        handleMomentBroadcast(payload);
+      })
+      .subscribe();
+  }
+
+  // ── Vote resolution ───────────────────────────────────────────────
+  async function checkVoteResolution(playerIndex, holeNumber) {
+    const { data: votes } = await window.sb
+      .from('declaration_votes')
+      .select('vote')
+      .eq('round_id', roundId)
+      .eq('player_index', playerIndex)
+      .eq('hole_number', holeNumber);
+    if (!votes || votes.length === 0) return;
+    const totalVoters = players.length - 1;
+    const yesVotes = votes.filter(v => v.vote).length;
+    if (votes.length >= totalVoters || yesVotes > totalVoters / 2 || (votes.length - yesVotes) > totalVoters / 2) {
+      const hit = yesVotes > votes.length / 2;
+      await window.sb.from('hole_scores').upsert({
+        round_id: roundId, player_index: playerIndex, hole_number: holeNumber, hit,
+        par: holeData[holeNumber].par,
+      }, { onConflict: 'round_id,player_index,hole_number' });
+      // Clear vote prompt if it was for this player/hole
+      if (pendingVote?.playerIndex === playerIndex && pendingVote?.holeNumber === holeNumber + 1) {
+        hideVotePrompt();
+      }
+    }
+  }
+
+  // ── Vote prompt UI ────────────────────────────────────────────────
+  function showVotePrompt(payload) {
+    const el = document.getElementById('votePrompt');
+    const declLabel = ALL_DECLARATIONS.find(d => d.value === payload.declaration)?.label || payload.declaration;
+    const extra = payload.calledScore ? ` (${payload.calledScore})` : '';
+    const preShot = payload.isPreShot ? ' — confirm the line before the shot' : '';
+    document.getElementById('voteText').textContent =
+      `${payload.playerName} declared ${declLabel}${extra} on Hole ${payload.holeNumber}${preShot}. Did they hit it?`;
+    document.getElementById('votePiPlayerIndex').value = payload.playerIndex;
+    document.getElementById('votePiHoleNumber').value  = payload.holeNumber - 1;
+    el.style.display = 'flex';
+  }
+
+  function hideVotePrompt() {
+    document.getElementById('votePrompt').style.display = 'none';
+    pendingVote = null;
+  }
+
+  async function castVote(voteYes) {
+    if (myPlayerIndex < 0) { hideVotePrompt(); return; }
+    const playerIndex = parseInt(document.getElementById('votePiPlayerIndex').value);
+    const holeNumber  = parseInt(document.getElementById('votePiHoleNumber').value);
+    await window.sb.from('declaration_votes').insert({
+      round_id: roundId,
+      player_index: playerIndex,
+      hole_number: holeNumber,
+      voter_player_index: myPlayerIndex,
+      vote: voteYes,
+    });
+    hideVotePrompt();
+  }
+
+  // ── Moment broadcast handler ──────────────────────────────────────
+  function handleMomentBroadcast(payload) {
+    if (payload.moment === 'hio') {
+      document.getElementById('hioName').textContent = payload.playerName + ' — Hole ' + payload.holeNumber;
+      document.getElementById('hioOverlay').style.display = 'flex';
+      clearTimeout(window._hioTimer);
+      window._hioTimer = setTimeout(() => {
+        document.getElementById('hioOverlay').style.display = 'none';
+      }, 8000);
+    } else {
+      showToast(`${payload.playerName} just ${payload.label} on Hole ${payload.holeNumber} — +${payload.points} pts!`);
+    }
   }
 
   // ── End round ─────────────────────────────────────────────────────
@@ -1270,6 +1517,7 @@
   document.getElementById('holeView').addEventListener('input', e => {
     if (!e.target.classList.contains('strokes-input')) return;
     const pi  = parseInt(e.target.dataset.player);
+    if (!canEdit(pi)) return;
     const val = parseInt(e.target.value);
     holeData[currentHole].players[pi].strokes = isNaN(val) || val < 1 ? null : val;
     updateHoleScoreDisplay(currentHole, pi);
@@ -1280,17 +1528,34 @@
   });
 
   document.getElementById('holeView').addEventListener('change', e => {
-    if (!e.target.classList.contains('declaration-select')) return;
-    const pi  = parseInt(e.target.dataset.player);
-    const val = e.target.value;
-    holeData[currentHole].players[pi].declaration = val;
-    if (val === 'none') holeData[currentHole].players[pi].hit = null;
-    const hmWrap = document.querySelector(`.hit-miss-wrap[data-hm-player="${pi}"]`);
-    if (hmWrap) hmWrap.style.display = val === 'none' ? 'none' : '';
-    updateHoleScoreDisplay(currentHole, pi);
-    renderLeaderboard();
-    if (currentView === 'full') renderFullScorecard();
-    saveHoleScore(currentHole, pi);
+    const pi = parseInt(e.target.dataset.player);
+    if (!canEdit(pi)) return;
+
+    if (e.target.classList.contains('declaration-select')) {
+      const val = e.target.value;
+      const pd  = holeData[currentHole].players[pi];
+      pd.declaration = val;
+      if (val === 'none') { pd.hit = null; pd.called_score = null; pd.awaitingVote = false; }
+      updateHoleScoreDisplay(currentHole, pi);
+      renderLeaderboard();
+      renderHole(currentHole);
+      if (currentView === 'full') renderFullScorecard();
+      // Save first, then broadcast for group confirmation
+      saveHoleScore(currentHole, pi).then(() => {
+        if (val !== 'none') broadcastDeclaration(pi, currentHole);
+      });
+      return;
+    }
+
+    if (e.target.classList.contains('cys-select')) {
+      const val = e.target.value;
+      holeData[currentHole].players[pi].called_score = val || null;
+      updateHoleScoreDisplay(currentHole, pi);
+      renderLeaderboard();
+      if (currentView === 'full') renderFullScorecard();
+      saveHoleScore(currentHole, pi);
+      return;
+    }
   });
 
   document.getElementById('holeView').addEventListener('click', e => {
@@ -1298,11 +1563,12 @@
     if (!btn) return;
 
     if (btn.classList.contains('par-btn')) {
+      if (!isCommissioner && myPlayerIndex >= 0) return; // only commissioner changes par
       const newPar = parseInt(btn.dataset.par);
       holeData[currentHole].par = newPar;
-      const validDecls = declarationsForPar(newPar).map(d => d.value);
+      const validDeclValues = declarationsForPar(newPar, 0).map(d => d.value);
       holeData[currentHole].players.forEach((pd, pi) => {
-        if (!validDecls.includes(pd.declaration)) { pd.declaration = 'none'; pd.hit = null; }
+        if (!validDeclValues.includes(pd.declaration)) { pd.declaration = 'none'; pd.hit = null; pd.called_score = null; }
         saveHoleScore(currentHole, pi);
       });
       renderHole(currentHole);
@@ -1313,6 +1579,7 @@
 
     if (btn.dataset.hm) {
       const pi    = parseInt(btn.dataset.player);
+      if (!canEdit(pi)) return;
       const isHit = btn.dataset.hm === 'hit';
       const current = holeData[currentHole].players[pi].hit;
       if ((isHit && current === true) || (!isHit && current === false)) {
@@ -1335,13 +1602,15 @@
 
     if (btn.classList.contains('moment-btn')) {
       const pi = parseInt(btn.dataset.player);
+      if (!canEdit(pi)) return;
       const m  = btn.dataset.moment;
+      const prevMoments = { ...holeData[currentHole].players[pi].moments };
       holeData[currentHole].players[pi].moments[m] = !holeData[currentHole].players[pi].moments[m];
       btn.classList.toggle('active');
       updateHoleScoreDisplay(currentHole, pi);
       renderLeaderboard();
       if (currentView === 'full') renderFullScorecard();
-      saveHoleScore(currentHole, pi);
+      saveHoleScore(currentHole, pi, { prevMoments });
       return;
     }
   });
@@ -1354,6 +1623,10 @@
     const overlay = document.getElementById('loadingOverlay');
     const loadTxt = document.getElementById('loadingText');
 
+    // Require auth
+    const session = await auth.requireAuth();
+    const currentUserId = session.user.id;
+
     // Legacy URL params (no round= param)
     if (!roundId && legacyCount > 0) {
       for (let i = 0; i < legacyCount; i++) {
@@ -1364,6 +1637,8 @@
         });
       }
       holeData = buildHoleData();
+      myPlayerIndex = 0;
+      isCommissioner = true;
       overlay.classList.add('hidden');
       document.getElementById('navRoundLabel').textContent = players.map(p => p.name.split(' ')[0]).join(' · ');
       renderHole(0);
@@ -1391,7 +1666,7 @@
 
       const { data: round, error: roundErr } = await window.sb
         .from('rounds')
-        .select('id, status, code')
+        .select('id, status, code, locked, decl_limits, commissioner_user_id')
         .eq('id', roundId)
         .single();
 
@@ -1400,7 +1675,10 @@
       document.getElementById('roundCodeBadge').style.display = 'flex';
       document.getElementById('roundCodeValue').textContent = round.code;
 
-      if (round.status === 'completed') {
+      commissionerUserId = round.commissioner_user_id;
+      declLimits = round.decl_limits || {};
+
+      if (round.status === 'completed' || round.locked) {
         roundLocked = true;
         document.body.classList.add('round-locked');
       }
@@ -1408,7 +1686,7 @@
       loadTxt.textContent = 'Loading players…';
       const { data: roundPlayers, error: playersErr } = await window.sb
         .from('round_players')
-        .select('player_index, name, multiplier, head_start')
+        .select('player_index, name, multiplier, head_start, user_id')
         .eq('round_id', roundId)
         .order('player_index');
 
@@ -1420,6 +1698,14 @@
 
       holeData = buildHoleData();
 
+      // Determine player identity
+      const matchedPlayer = roundPlayers.find(rp => rp.user_id === currentUserId);
+      if (matchedPlayer) {
+        myPlayerIndex = matchedPlayer.player_index;
+      }
+      isCommissioner = (currentUserId === commissionerUserId) || myPlayerIndex === 0;
+      if (isCommissioner && myPlayerIndex < 0) myPlayerIndex = 0;
+
       loadTxt.textContent = 'Loading scores…';
       const { data: scores } = await window.sb
         .from('hole_scores')
@@ -1430,22 +1716,55 @@
         scores.forEach(row => {
           const h  = holeData[row.hole_number];
           const pd = h.players[row.player_index];
-          h.par           = row.par;
-          pd.strokes      = row.strokes;
-          pd.declaration  = row.declaration || 'none';
-          pd.hit          = row.hit;
-          pd.moments.hio  = row.moments_hio;
-          pd.moments.sand = row.moments_sand;
-          pd.moments.chip = row.moments_chip;
-          pd.moments.pap  = row.moments_pap;
+          h.par            = row.par;
+          pd.strokes       = row.strokes;
+          pd.declaration   = row.declaration || 'none';
+          pd.called_score  = row.called_score || null;
+          pd.hit           = row.hit;
+          pd.moments.hio   = row.moments_hio;
+          pd.moments.sand  = row.moments_sand;
+          pd.moments.chip  = row.moments_chip;
+          pd.moments.pap   = row.moments_pap;
         });
       }
 
+      // Load declaration usage
+      const { data: usageData } = await window.sb
+        .from('declaration_usage')
+        .select('player_index, declaration_type, count')
+        .eq('round_id', roundId);
+      (usageData || []).forEach(row => {
+        if (!usageMap[row.player_index]) usageMap[row.player_index] = {};
+        usageMap[row.player_index][row.declaration_type] = row.count;
+      });
+
+      // Check for any open votes on reload
+      const { data: openVotes } = await window.sb
+        .from('declaration_votes')
+        .select('player_index, hole_number')
+        .eq('round_id', roundId);
+      // (votes exist but round may already have resolved — handled by subscribeRealtime)
+
       overlay.classList.add('hidden');
       document.getElementById('navRoundLabel').textContent = players.map(p => p.name.split(' ')[0]).join(' · ');
+
+      // Show commissioner settings link if commissioner
+      if (isCommissioner) {
+        const settingsLink = document.createElement('a');
+        settingsLink.href = `commissioner.html?round=${roundId}`;
+        settingsLink.textContent = 'Settings';
+        settingsLink.style.cssText = 'font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);text-decoration:none;opacity:0.9;margin-right:8px;';
+        document.getElementById('endRoundBtn').before(settingsLink);
+      }
+
       renderHole(0);
       renderLeaderboard();
       subscribeRealtime();
+
+      // Show identity modal if not yet identified and round not locked
+      if (myPlayerIndex < 0 && !roundLocked) {
+        showIdentityModal(roundPlayers, currentUserId);
+      }
 
     } catch (err) {
       console.error('initRound error:', err);
@@ -1461,10 +1780,94 @@
     }
   }
 
+  // ── Identity modal ────────────────────────────────────────────────
+  function showIdentityModal(roundPlayers, currentUserId) {
+    const unclaimed = roundPlayers.filter(rp => !rp.user_id);
+    const modal = document.getElementById('identityModal');
+    const list  = document.getElementById('identityPlayerList');
+    list.innerHTML = unclaimed.map(rp => `
+      <button class="identity-player-btn" data-index="${rp.player_index}">${escHtml(rp.name)}</button>
+    `).join('') || '<p style="color:rgba(245,240,232,0.5);font-size:0.9rem;">All player slots are taken.</p>';
+
+    list.querySelectorAll('.identity-player-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.dataset.index);
+        const { error } = await window.sb
+          .from('round_players')
+          .update({ user_id: currentUserId })
+          .eq('round_id', roundId)
+          .eq('player_index', idx)
+          .is('user_id', null);
+        if (error) { showToast('Could not claim player — try again', true); return; }
+        myPlayerIndex  = idx;
+        isCommissioner = (myPlayerIndex === 0);
+        modal.style.display = 'none';
+        renderHole(currentHole);
+      });
+    });
+
+    document.getElementById('identityWatchBtn').addEventListener('click', () => {
+      myPlayerIndex = -1;
+      modal.style.display = 'none';
+    });
+
+    modal.style.display = 'flex';
+  }
+
   initRound();
 </script>
 
 <div class="toast" id="toast"></div>
+
+<!-- HiO Full-Screen Overlay -->
+<div id="hioOverlay" style="display:none;position:fixed;inset:0;background:rgba(13,26,18,0.97);z-index:99999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
+  <div style="font-size:5rem;animation:hio-pulse 0.8s infinite;">⛳</div>
+  <h1 style="font-family:'Black Ops One',cursive;font-size:3.5rem;color:var(--gold);margin:16px 0 8px;letter-spacing:0.05em;">HOLE IN ONE!</h1>
+  <p id="hioName" style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;color:var(--green-bright);letter-spacing:0.1em;margin-bottom:8px;"></p>
+  <p style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.15em;">+44 POINTS</p>
+  <button onclick="document.getElementById('hioOverlay').style.display='none'" style="margin-top:32px;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;background:transparent;border:1.5px solid rgba(201,168,76,0.4);color:rgba(245,240,232,0.5);padding:10px 28px;cursor:pointer;">Dismiss</button>
+</div>
+
+<!-- Vote Prompt -->
+<div id="votePrompt" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--dark);border:1.5px solid var(--gold);border-radius:8px;padding:20px 24px;max-width:420px;width:90%;z-index:9000;flex-direction:column;gap:14px;align-items:center;text-align:center;">
+  <p id="voteText" style="font-family:'Barlow',sans-serif;font-size:0.9rem;color:var(--cream);line-height:1.5;"></p>
+  <div style="display:flex;gap:10px;">
+    <button onclick="castVote(true)"  style="flex:1;font-family:'Black Ops One',cursive;font-size:1rem;letter-spacing:0.05em;background:var(--green-mid);color:var(--cream);border:none;padding:12px;border-radius:4px;cursor:pointer;">HIT ✓</button>
+    <button onclick="castVote(false)" style="flex:1;font-family:'Black Ops One',cursive;font-size:1rem;letter-spacing:0.05em;background:#8B2020;color:var(--cream);border:none;padding:12px;border-radius:4px;cursor:pointer;">MISS ✗</button>
+  </div>
+  <input type="hidden" id="votePiPlayerIndex">
+  <input type="hidden" id="votePiHoleNumber">
+</div>
+
+<!-- Identity Modal -->
+<div id="identityModal" style="display:none;position:fixed;inset:0;background:rgba(13,26,18,0.96);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:rgba(27,61,42,0.4);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:40px;max-width:420px;width:100%;text-align:center;">
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--green-bright);margin-bottom:8px;">Joining Round</p>
+    <h2 style="font-family:'Black Ops One',cursive;font-size:2rem;color:var(--gold);margin-bottom:8px;">Who Are You?</h2>
+    <p style="font-family:'Barlow',sans-serif;font-size:0.85rem;color:rgba(245,240,232,0.5);margin-bottom:24px;">Select your name to claim your player slot.</p>
+    <div id="identityPlayerList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+    <button id="identityWatchBtn" style="background:transparent;border:1px solid rgba(245,240,232,0.2);color:rgba(245,240,232,0.4);font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;padding:10px 20px;cursor:pointer;border-radius:4px;width:100%;">Watch Only</button>
+  </div>
+</div>
+
+<style>
+  @keyframes hio-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
+  .not-mine { opacity: 0.4; pointer-events: none; }
+  .awaiting-vote-banner {
+    font-family: 'Barlow', sans-serif; font-size: 0.82rem;
+    color: var(--gold); padding: 8px 12px;
+    background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 4px; margin-top: 6px;
+  }
+  .identity-player-btn {
+    width: 100%; padding: 14px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    background: rgba(45,122,79,0.2); border: 1.5px solid rgba(201,168,76,0.4);
+    color: var(--cream); cursor: pointer; border-radius: 4px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .identity-player-btn:hover { background: rgba(45,122,79,0.4); border-color: var(--gold); }
+</style>
 
 </body>
 </html>
