@@ -957,8 +957,8 @@ canvas#hcp-chart { width: 100%; height: 100%; }
         </div>
 
         <div class="btn-row" style="margin-top:20px;">
-          <button class="btn btn-green" onclick="openBillingPortal()">Manage billing</button>
-          <button class="btn btn-outline" onclick="cancelSubscription()">Cancel subscription</button>
+          <button class="btn btn-green" onclick="openBillingPortal(this)">Manage billing</button>
+          <button class="btn btn-outline" onclick="cancelSubscription(this)">Cancel subscription</button>
         </div>
       </div>
 
@@ -1345,16 +1345,14 @@ function loadSubscription(profile) {
   }
 }
 
-async function openBillingPortal() {
+async function openBillingPortal(btn) {
   const { data: profile } = await auth.getProfile(currentUser.id);
   if (!profile?.stripe_customer_id) {
     showToast('No billing account found.', true);
     return;
   }
 
-  const btn = event.target;
-  btn.disabled = true;
-  btn.textContent = 'Opening…';
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening…'; }
 
   try {
     const EDGE_BASE = 'https://jfegilifmksmngslnbgm.supabase.co/functions/v1';
@@ -1367,17 +1365,18 @@ async function openBillingPortal() {
       }),
     });
     const data = await res.json();
+    console.log('portal response:', data);
     if (data.error) throw new Error(data.error);
     window.location.href = data.url;
   } catch (err) {
+    console.error('portal error:', err);
     showToast(err.message || 'Failed to open billing portal.', true);
-    btn.disabled = false;
-    btn.textContent = 'Manage billing';
+    if (btn) { btn.disabled = false; btn.textContent = 'Manage billing'; }
   }
 }
 
-function cancelSubscription() {
-  openBillingPortal();
+function cancelSubscription(btn) {
+  openBillingPortal(btn);
 }
 
 // ── Round History ─────────────────────────────────────────────────────────────
