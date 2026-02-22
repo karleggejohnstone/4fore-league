@@ -1345,14 +1345,39 @@ function loadSubscription(profile) {
   }
 }
 
-function openBillingPortal() {
-  showToast('Stripe billing portal coming soon.');
+async function openBillingPortal() {
+  const profile = await auth.getProfile(currentUser.id);
+  if (!profile?.stripe_customer_id) {
+    showToast('No billing account found.', true);
+    return;
+  }
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Opening…';
+
+  try {
+    const EDGE_BASE = 'https://jfegilifmksmngslnbgm.supabase.co/functions/v1';
+    const res = await fetch(`${EDGE_BASE}/create-portal-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerId: profile.stripe_customer_id,
+        returnUrl: window.location.href,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    window.location.href = data.url;
+  } catch (err) {
+    showToast(err.message || 'Failed to open billing portal.', true);
+    btn.disabled = false;
+    btn.textContent = 'Manage billing';
+  }
 }
 
 function cancelSubscription() {
-  if (confirm('Cancel your subscription? You\'ll keep access until the end of the current billing period, then drop to Free.')) {
-    showToast('Cancellation request sent. You\'ll receive an email confirmation.');
-  }
+  openBillingPortal();
 }
 
 // ── Round History ─────────────────────────────────────────────────────────────
