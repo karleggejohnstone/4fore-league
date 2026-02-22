@@ -1190,6 +1190,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProfile();
   loadRounds();
   loadCareerStats();
+
+  // Show Dashboard link in sidebar for commissioner tier
+  const isComm = await auth.canAccess('commissioner');
+  if (isComm) {
+    const sidebar = document.querySelector('.sidebar');
+    const divider = document.createElement('hr');
+    divider.style.cssText = 'border:none;border-top:1px solid var(--border);margin:16px 0;';
+    const section = document.createElement('div');
+    section.className = 'sidebar-section';
+    section.innerHTML = `<div class="sidebar-label">Commissioner</div>
+      <a href="dashboard.html" class="nav-item" style="text-decoration:none;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>`;
+    sidebar.appendChild(divider);
+    sidebar.appendChild(section);
+  }
 });
 
 // ── Profile ───────────────────────────────────────────────────────────────────

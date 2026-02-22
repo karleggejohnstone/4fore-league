@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commissioner Dashboard · 4FORE League</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<style>
+:root {
+  --cream:  #F5F0E8;
+  --cream2: #EDE8DF;
+  --green:  #1B3D2A;
+  --green2: #2A5C3F;
+  --green3: rgba(27,61,42,0.07);
+  --gold:   #C9A84C;
+  --gold2:  #E8C96A;
+  --text:   #1A1A1A;
+  --muted:  #6B6B6B;
+  --error:  #B91C1C;
+  --success:#166534;
+  --border: #D6CFC4;
+  --white:  #ffffff;
+  --sidebar-w: 240px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--cream);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--green);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.topbar-logo span { color: #3ddc84; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: rgba(245,240,232,0.7);
+}
+
+.topbar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.btn-signout {
+  background: transparent;
+  border: 1px solid rgba(245,240,232,0.25);
+  color: rgba(245,240,232,0.6);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-signout:hover { border-color: rgba(245,240,232,0.5); color: var(--cream); }
+
+/* ── LAYOUT ── */
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  padding: 32px 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+
+.sidebar-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover { background: var(--green3); color: var(--green); }
+
+.nav-item.active {
+  background: var(--green3);
+  color: var(--green);
+  font-weight: 600;
+}
+
+.nav-item svg { flex-shrink: 0; opacity: 0.6; }
+.nav-item.active svg, .nav-item:hover svg { opacity: 1; }
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+/* ── MAIN ── */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 48px;
+  max-width: 960px;
+}
+
+/* ── SECTIONS ── */
+.section { display: none; }
+.section.active { display: block; }
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: var(--green);
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.section-sub {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── STAT GRID ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.4rem;
+  color: var(--green);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── ROUND CARDS ── */
+.rounds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.round-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  transition: box-shadow 0.15s;
+}
+
+.round-card:hover { box-shadow: 0 2px 12px rgba(27,61,42,0.08); }
+
+.round-card-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  color: var(--green);
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.round-card-course {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.round-card-meta {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.round-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+
+.badge-active  { background: #DCFCE7; color: #166534; }
+.badge-locked  { background: #FEF3C7; color: #92400E; }
+.badge-ended   { background: #F3F4F6; color: #6B7280; }
+.badge-private { background: #EDE9FE; color: #5B21B6; }
+
+.round-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.round-card-actions a {
+  flex: 1;
+  text-align: center;
+  padding: 7px 0;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.round-action-view {
+  background: var(--green3);
+  color: var(--green);
+  border: 1px solid rgba(27,61,42,0.15);
+}
+
+.round-action-view:hover { background: var(--green); color: white; }
+
+.round-action-settings {
+  background: rgba(201,168,76,0.12);
+  color: var(--gold);
+  border: 1px solid rgba(201,168,76,0.3);
+}
+
+.round-action-settings:hover { background: var(--gold); color: var(--green); }
+
+.rounds-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.rounds-empty svg { margin-bottom: 12px; opacity: 0.3; }
+
+/* ── FIELDS ── */
+.field { margin-bottom: 18px; }
+
+.field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 5px;
+}
+
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 10px 13px;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--green);
+  background: white;
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+/* ── TOGGLE ROW ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.toggle-row:last-child { border-bottom: none; }
+
+.toggle-row-label { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+.toggle-row-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+.toggle {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input { opacity: 0; width: 0; height: 0; }
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle input:checked + .toggle-track { background: var(--green); }
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 10px 24px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn:hover { transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover:not(:disabled) { background: var(--green2); }
+
+.btn-gold { background: var(--gold); color: var(--green); }
+.btn-gold:hover:not(:disabled) { background: var(--gold2); }
+
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 9px 20px;
+}
+
+.btn-outline:hover { border-color: var(--green); color: var(--green); }
+
+.btn-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+
+/* ── HOLES TOGGLE ── */
+.holes-toggle {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.holes-toggle-btn {
+  padding: 9px 24px;
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.holes-toggle-btn.active {
+  background: var(--green);
+  color: white;
+}
+
+/* ── PLAYER SEARCH ── */
+.player-search-wrap { position: relative; }
+
+.player-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+}
+
+.player-search-results.open { display: block; }
+
+.player-search-result {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.player-search-result:hover { background: var(--green3); }
+
+.player-search-result-name { font-size: 0.9rem; font-weight: 500; }
+.player-search-result-meta { font-size: 0.78rem; color: var(--muted); }
+
+.player-guest-btn {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--gold);
+  font-weight: 500;
+  cursor: pointer;
+  border-top: 1px dashed var(--border);
+}
+
+.player-guest-btn:hover { background: rgba(201,168,76,0.08); }
+
+/* ── PLAYER LIST (pre-add) ── */
+.player-list { list-style: none; margin-bottom: 16px; }
+
+.player-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.player-list-item:last-child { border-bottom: none; }
+
+.player-list-name { font-size: 0.9rem; font-weight: 500; flex: 1; }
+.player-list-hcp  { font-size: 0.82rem; color: var(--muted); min-width: 60px; text-align: right; }
+
+.player-remove {
+  background: none;
+  border: none;
+  color: var(--error);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.player-remove:hover { opacity: 1; }
+
+/* ── UPGRADE GATE ── */
+.upgrade-gate {
+  text-align: center;
+  padding: 64px 32px;
+}
+
+.upgrade-gate-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.upgrade-gate h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: var(--green);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+
+.upgrade-gate p {
+  font-size: 0.95rem;
+  color: var(--muted);
+  max-width: 420px;
+  margin: 0 auto 24px;
+}
+
+/* ── STATUS ── */
+.status-msg {
+  font-size: 0.85rem;
+  padding: 8px 0;
+  min-height: 24px;
+}
+
+.status-ok  { color: var(--success); }
+.status-err { color: var(--error); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .main { padding: 24px 20px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .field-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">4FORE <span>LEAGUE</span></a>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <div class="topbar-avatar" id="topbarAvatar">?</div>
+      <span id="topbarName">Loading…</span>
+    </div>
+    <button class="btn-signout" onclick="auth.signOut()">Sign Out</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Commissioner</div>
+      <button class="nav-item active" data-section="rounds" onclick="showSection('rounds', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        My Rounds
+      </button>
+      <button class="nav-item" data-section="create" onclick="showSection('create', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Create Round
+      </button>
+      <button class="nav-item" data-section="stats" onclick="showSection('stats', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Stats
+      </button>
+    </div>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Account</div>
+      <a class="nav-item" href="account.html">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My Account
+      </a>
+      <a class="nav-item" href="round.html">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+        Start / Join Round
+      </a>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="mainContent">
+
+    <!-- UPGRADE GATE (hidden by default, shown if not commissioner) -->
+    <div id="upgradeGate" style="display:none;">
+      <div class="upgrade-gate">
+        <div class="upgrade-gate-icon">🏌️</div>
+        <h2>Commissioner Hub</h2>
+        <p>The Commissioner Dashboard is a feature of the Commissioner subscription tier. Upgrade your account to unlock full round management.</p>
+        <a href="account.html#billing" class="btn btn-gold">Upgrade to Commissioner</a>
+      </div>
+    </div>
+
+    <!-- ROUNDS SECTION -->
+    <div class="section active" id="sec-rounds">
+      <div class="section-title">My Rounds</div>
+      <div class="section-sub">Rounds you've created as commissioner.</div>
+
+      <div id="roundsGrid" class="rounds-grid">
+        <div class="rounds-empty" style="grid-column: 1/-1;">
+          <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+          <p>Loading rounds…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATE SECTION -->
+    <div class="section" id="sec-create">
+      <div class="section-title">Create Round</div>
+      <div class="section-sub">Set up a new round. You'll be taken to the settings page to configure players and declarations.</div>
+
+      <div class="card">
+        <div class="card-title">Round Details</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="newRoundName">Round Name</label>
+            <input id="newRoundName" type="text" placeholder="Saturday Morning Four" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="newCourseName">Course Name</label>
+            <input id="newCourseName" type="text" placeholder="Augusta National" maxlength="80">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="newRoundDate">Date</label>
+            <input id="newRoundDate" type="date">
+          </div>
+          <div class="field">
+            <label>Holes</label>
+            <div class="holes-toggle">
+              <button class="holes-toggle-btn active" id="holes9Btn" onclick="setHoles(9)">9</button>
+              <button class="holes-toggle-btn" id="holes18Btn" onclick="setHoles(18)">18</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">Public Round</div>
+            <div class="toggle-row-sub">Anyone with the code can join.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="newRoundPublic" checked>
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Players</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">Search for registered users or add a guest by name. You can adjust player details in the round settings after creating.</p>
+
+        <div class="field">
+          <label>Search Players</label>
+          <div class="player-search-wrap">
+            <input type="text" id="playerSearchInput" placeholder="Name or email…" autocomplete="off">
+            <div class="player-search-results" id="playerSearchResults"></div>
+          </div>
+        </div>
+
+        <ul class="player-list" id="playerList"></ul>
+
+        <p class="field-hint" id="playerCountHint">0 players added.</p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="createRound()" id="createBtn">Create Round</button>
+        <span class="status-msg" id="createStatus"></span>
+      </div>
+    </div>
+
+    <!-- STATS SECTION -->
+    <div class="section" id="sec-stats">
+      <div class="section-title">Your Stats</div>
+      <div class="section-sub">Overview of rounds you've run as commissioner.</div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statRounds">—</div>
+          <div class="stat-label">Rounds Run</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statPlayers">—</div>
+          <div class="stat-label">Total Players</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statActive">—</div>
+          <div class="stat-label">Active Rounds</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Recent Activity</div>
+        <div id="recentActivity" style="color:var(--muted);font-size:0.88rem;">Loading…</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(async () => {
+  // ── Auth gate ────────────────────────────────────────────────────────────
+  const session = await auth.requireAuth();
+  const user = session.user;
+
+  // Topbar
+  const { data: profile } = await auth.getProfile(user.id);
+  const name = profile?.display_name || user.email?.split('@')[0] || 'Commissioner';
+  document.getElementById('topbarName').textContent = name;
+  document.getElementById('topbarAvatar').textContent = name.charAt(0).toUpperCase();
+
+  // Commissioner check
+  const isComm = await auth.canAccess('commissioner');
+  if (!isComm) {
+    document.getElementById('upgradeGate').style.display = 'block';
+    document.getElementById('mainContent').querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('.nav-item').forEach(n => n.style.pointerEvents = 'none');
+    return;
+  }
+
+  // ── Load rounds ──────────────────────────────────────────────────────────
+  await loadRounds(user.id);
+  await loadStats(user.id);
+  initCreateForm(user.id);
+
+  // Set default date to today
+  document.getElementById('newRoundDate').value = new Date().toISOString().slice(0, 10);
+
+  // ── Load rounds ──────────────────────────────────────────────────────────
+  async function loadRounds(userId) {
+    const { data: rounds, error } = await window.sb
+      .from('rounds')
+      .select('id, name, course_name, status, locked, is_public, created_at')
+      .eq('commissioner_user_id', userId)
+      .order('created_at', { ascending: false });
+
+    const grid = document.getElementById('roundsGrid');
+
+    if (error || !rounds || rounds.length === 0) {
+      grid.innerHTML = `<div class="rounds-empty" style="grid-column:1/-1">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        <p>No rounds yet. <button class="btn-outline" onclick="showSection('create', document.querySelector('[data-section=create]'))" style="margin-left:8px;cursor:pointer;">Create your first round</button></p>
+      </div>`;
+      return;
+    }
+
+    // Fetch player counts in a second query
+    const roundIds = rounds.map(r => r.id);
+    const { data: playerCounts } = await window.sb
+      .from('round_players')
+      .select('round_id')
+      .in('round_id', roundIds);
+
+    const countMap = {};
+    (playerCounts || []).forEach(p => {
+      countMap[p.round_id] = (countMap[p.round_id] || 0) + 1;
+    });
+
+    grid.innerHTML = rounds.map(r => {
+      const statusBadge = r.locked
+        ? '<span class="round-badge badge-locked">Locked</span>'
+        : r.status === 'ended'
+        ? '<span class="round-badge badge-ended">Ended</span>'
+        : '<span class="round-badge badge-active">Active</span>';
+
+      const privateBadge = !r.is_public
+        ? '<span class="round-badge badge-private">Private</span>'
+        : '';
+
+      const dateStr = r.created_at
+        ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '';
+
+      const playerCount = countMap[r.id] || 0;
+
+      return `<div class="round-card">
+        <div class="round-card-name">${escHtml(r.name || 'Untitled Round')}</div>
+        <div class="round-card-course">${escHtml(r.course_name || '—')} &bull; ${dateStr} &bull; ${playerCount} player${playerCount !== 1 ? 's' : ''}</div>
+        <div class="round-card-meta">${statusBadge}${privateBadge}</div>
+        <div class="round-card-actions">
+          <a href="scorecard.html?round=${r.id}" class="round-action-view">View Scorecard</a>
+          <a href="commissioner.html?round=${r.id}" class="round-action-settings">Settings</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Stats ────────────────────────────────────────────────────────────────
+  async function loadStats(userId) {
+    const { data: rounds } = await window.sb
+      .from('rounds')
+      .select('id, status, created_at')
+      .eq('commissioner_user_id', userId)
+      .order('created_at', { ascending: false });
+
+    const total = rounds?.length || 0;
+    const active = rounds?.filter(r => r.status === 'active').length || 0;
+
+    document.getElementById('statRounds').textContent = total;
+    document.getElementById('statActive').textContent = active;
+
+    if (rounds && rounds.length > 0) {
+      const roundIds = rounds.map(r => r.id);
+      const { data: players } = await window.sb
+        .from('round_players')
+        .select('player_index')
+        .in('round_id', roundIds);
+      document.getElementById('statPlayers').textContent = players?.length || 0;
+    } else {
+      document.getElementById('statPlayers').textContent = '0';
+    }
+
+    const recentEl = document.getElementById('recentActivity');
+    if (!rounds || rounds.length === 0) {
+      recentEl.textContent = 'No rounds yet.';
+      return;
+    }
+
+    recentEl.innerHTML = rounds.slice(0, 5).map(r => {
+      const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const badge = r.status === 'active'
+        ? '<span class="round-badge badge-active" style="margin-left:8px;">Active</span>'
+        : '<span class="round-badge badge-ended" style="margin-left:8px;">Ended</span>';
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <span style="font-weight:500;">${escHtml(r.name || 'Untitled Round')}</span>
+          <span style="color:var(--muted);font-size:0.8rem;margin-left:8px;">${date}</span>
+        </div>
+        <div>
+          ${badge}
+          <a href="commissioner.html?round=${r.id}" style="margin-left:8px;font-size:0.8rem;color:var(--gold);">Settings →</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Create Form ──────────────────────────────────────────────────────────
+  let newHoles = 9;
+  let pendingPlayers = []; // [{name, userId, email, handicapIndex}]
+  let searchTimer = null;
+
+  function initCreateForm(userId) {
+    const searchInput = document.getElementById('playerSearchInput');
+    const resultsEl = document.getElementById('playerSearchResults');
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const q = searchInput.value.trim();
+      if (q.length < 2) { resultsEl.classList.remove('open'); return; }
+      searchTimer = setTimeout(() => searchPlayers(q, resultsEl, searchInput), 300);
+    });
+
+    searchInput.addEventListener('blur', () => {
+      setTimeout(() => resultsEl.classList.remove('open'), 200);
+    });
+  }
+
+  async function searchPlayers(q, resultsEl, searchInput) {
+    const { data } = await window.sb
+      .from('profiles')
+      .select('id, display_name, email, handicap_index')
+      .or(`display_name.ilike.%${q}%,email.ilike.%${q}%`)
+      .limit(5);
+
+    const items = data || [];
+    const alreadyIds = pendingPlayers.map(p => p.userId).filter(Boolean);
+    const filtered = items.filter(p => !alreadyIds.includes(p.id));
+
+    let html = filtered.map(p => {
+      const displayName = p.display_name || p.email?.split('@')[0] || 'Unknown';
+      const hcp = p.handicap_index != null ? `HCP ${p.handicap_index}` : '';
+      return `<div class="player-search-result" onmousedown="addRegisteredPlayer('${p.id}','${escAttr(displayName)}','${escAttr(p.email||'')}',${p.handicap_index ?? 'null'})">
+        <span class="player-search-result-name">${escHtml(displayName)}</span>
+        <span class="player-search-result-meta">${escHtml(hcp)}</span>
+      </div>`;
+    }).join('');
+
+    // Guest option
+    html += `<div class="player-guest-btn" onmousedown="addGuestPlayer('${escAttr(q)}')">+ Add "${escHtml(q)}" as guest</div>`;
+
+    resultsEl.innerHTML = html;
+    resultsEl.classList.add('open');
+  }
+
+  window.addRegisteredPlayer = function(userId, name, email, handicapIndex) {
+    if (pendingPlayers.find(p => p.userId === userId)) return;
+    pendingPlayers.push({ name, userId, email, handicapIndex });
+    refreshPlayerList();
+    document.getElementById('playerSearchInput').value = '';
+    document.getElementById('playerSearchResults').classList.remove('open');
+  };
+
+  window.addGuestPlayer = function(name) {
+    if (!name.trim()) return;
+    pendingPlayers.push({ name: name.trim(), userId: null, email: null, handicapIndex: null });
+    refreshPlayerList();
+    document.getElementById('playerSearchInput').value = '';
+    document.getElementById('playerSearchResults').classList.remove('open');
+  };
+
+  window.removePlayer = function(idx) {
+    pendingPlayers.splice(idx, 1);
+    refreshPlayerList();
+  };
+
+  function refreshPlayerList() {
+    const ul = document.getElementById('playerList');
+    const hint = document.getElementById('playerCountHint');
+    if (pendingPlayers.length === 0) {
+      ul.innerHTML = '';
+      hint.textContent = '0 players added.';
+      return;
+    }
+    ul.innerHTML = pendingPlayers.map((p, i) => {
+      const hcp = p.handicapIndex != null ? `HCP ${p.handicapIndex}` : p.userId ? 'Registered' : 'Guest';
+      return `<li class="player-list-item">
+        <span class="player-list-name">${escHtml(p.name)}</span>
+        <span class="player-list-hcp">${hcp}</span>
+        <button class="player-remove" onclick="removePlayer(${i})" title="Remove">×</button>
+      </li>`;
+    }).join('');
+    hint.textContent = `${pendingPlayers.length} player${pendingPlayers.length !== 1 ? 's' : ''} added.`;
+  }
+
+  window.setHoles = function(n) {
+    newHoles = n;
+    document.getElementById('holes9Btn').classList.toggle('active', n === 9);
+    document.getElementById('holes18Btn').classList.toggle('active', n === 18);
+  };
+
+  window.createRound = async function() {
+    const btn = document.getElementById('createBtn');
+    const status = document.getElementById('createStatus');
+    const name = document.getElementById('newRoundName').value.trim();
+    const course = document.getElementById('newCourseName').value.trim();
+    const date = document.getElementById('newRoundDate').value;
+    const isPublic = document.getElementById('newRoundPublic').checked;
+
+    if (!name) { status.textContent = 'Please enter a round name.'; status.className = 'status-msg status-err'; return; }
+
+    btn.disabled = true;
+    status.textContent = 'Creating…';
+    status.className = 'status-msg';
+
+    // Generate a join code
+    const code = Math.random().toString(36).slice(2, 7).toUpperCase();
+
+    const { data: round, error } = await window.sb
+      .from('rounds')
+      .insert({
+        name,
+        course_name: course || null,
+        holes: newHoles,
+        is_public: isPublic,
+        status: 'active',
+        code,
+        commissioner_user_id: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (error || !round) {
+      status.textContent = error?.message || 'Failed to create round.';
+      status.className = 'status-msg status-err';
+      btn.disabled = false;
+      return;
+    }
+
+    // Insert pending players as round_players
+    if (pendingPlayers.length > 0) {
+      const rows = pendingPlayers.map((p, i) => ({
+        round_id: round.id,
+        player_index: i,
+        name: p.name,
+        user_id: p.userId || null,
+        handicap_index: p.handicapIndex || 0,
+        multiplier: 1,
+        head_start: 0,
+      }));
+      await window.sb.from('round_players').insert(rows);
+    }
+
+    // Redirect to commissioner settings
+    window.location.href = `commissioner.html?round=${round.id}`;
+  };
+})();
+
+// ── Section navigation ───────────────────────────────────────────────────
+function showSection(name, navEl) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+}
+
+// ── Escape helpers ───────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(str) {
+  return String(str ?? '').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

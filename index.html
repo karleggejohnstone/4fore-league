@@ -884,6 +884,12 @@
       link.href = 'account.html';
       link.textContent = 'Account';
       link.style.color = 'var(--gold)';
+      const isComm = await auth.canAccess('commissioner');
+      if (isComm) {
+        const li = document.createElement('li');
+        li.innerHTML = '<a href="dashboard.html" style="color:var(--gold);opacity:1;">Dashboard</a>';
+        link.closest('li').before(li);
+      }
     }
   })();
 </script>

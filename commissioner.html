@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Round Settings · 4FORE League</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<style>
+:root {
+  --cream:  #F5F0E8;
+  --cream2: #EDE8DF;
+  --green:  #1B3D2A;
+  --green2: #2A5C3F;
+  --green3: rgba(27,61,42,0.07);
+  --gold:   #C9A84C;
+  --gold2:  #E8C96A;
+  --text:   #1A1A1A;
+  --muted:  #6B6B6B;
+  --error:  #B91C1C;
+  --success:#166534;
+  --border: #D6CFC4;
+  --white:  #ffffff;
+  --sidebar-w: 240px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--cream);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  background: var(--green);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.topbar-logo span { color: #3ddc84; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.topbar-back {
+  color: rgba(245,240,232,0.7);
+  font-size: 0.85rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+
+.topbar-back:hover { color: var(--cream); }
+
+.topbar-round-name {
+  color: var(--gold);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+.btn-signout {
+  background: transparent;
+  border: 1px solid rgba(245,240,232,0.25);
+  color: rgba(245,240,232,0.6);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-signout:hover { border-color: rgba(245,240,232,0.5); color: var(--cream); }
+
+/* LAYOUT */
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  padding: 32px 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.sidebar-section { padding: 0 16px; margin-bottom: 8px; }
+
+.sidebar-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover { background: var(--green3); color: var(--green); }
+.nav-item.active { background: var(--green3); color: var(--green); font-weight: 600; }
+.nav-item svg { flex-shrink: 0; opacity: 0.6; }
+.nav-item.active svg, .nav-item:hover svg { opacity: 1; }
+
+.sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* MAIN */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 48px;
+  max-width: 900px;
+}
+
+.section { display: none; }
+.section.active { display: block; }
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: var(--green);
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.section-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 32px; }
+
+/* CARDS */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* FIELDS */
+.field { margin-bottom: 18px; }
+
+.field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 5px;
+}
+
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 10px 13px;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--green);
+  background: white;
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+/* TOGGLE ROW */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row-label { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+.toggle-row-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+.toggle {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input { opacity: 0; width: 0; height: 0; }
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle input:checked + .toggle-track { background: var(--green); }
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+
+/* BUTTONS */
+.btn {
+  padding: 10px 24px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn:hover { transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover:not(:disabled) { background: var(--green2); }
+
+.btn-gold { background: var(--gold); color: var(--green); }
+.btn-gold:hover:not(:disabled) { background: var(--gold2); }
+
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 9px 20px;
+}
+
+.btn-outline:hover { border-color: var(--green); color: var(--green); }
+
+.btn-danger {
+  background: transparent;
+  border: 1.5px solid #FCA5A5;
+  color: var(--error);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 9px 20px;
+}
+
+.btn-danger:hover { background: #FEF2F2; }
+
+.btn-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+
+/* STATUS */
+.status-msg { font-size: 0.85rem; padding: 8px 0; min-height: 24px; }
+.status-ok  { color: var(--success); }
+.status-err { color: var(--error); }
+
+/* PLAYER ROWS */
+.player-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 80px 80px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.player-row:last-child { border-bottom: none; }
+
+.player-row input {
+  padding: 7px 10px;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+
+.player-row input:focus { border-color: var(--green); background: white; }
+
+.player-row-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.player-badge-claimed {
+  font-size: 0.7rem;
+  background: #DCFCE7;
+  color: #166534;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.player-badge-unclaimed {
+  font-size: 0.7rem;
+  background: #F3F4F6;
+  color: #6B7280;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* DECL LIMITS */
+.decl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.decl-field {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.decl-field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.decl-field input {
+  width: 60px;
+  padding: 6px 8px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text);
+  outline: none;
+}
+
+.decl-field input:focus { border-color: var(--green); }
+
+/* CORRECTIONS TABLE */
+.corrections-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.corrections-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
+}
+
+.corrections-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.corrections-table td input {
+  padding: 5px 8px;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  width: 60px;
+}
+
+.corrections-table td input:focus { border-color: var(--green); background: white; }
+
+.corrections-table td input.note-input { width: 200px; }
+
+/* PLAYER SEARCH */
+.player-search-wrap { position: relative; }
+
+.player-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+}
+
+.player-search-results.open { display: block; }
+
+.player-search-result {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.player-search-result:hover { background: var(--green3); }
+.player-search-result-name { font-size: 0.9rem; font-weight: 500; }
+.player-search-result-meta { font-size: 0.78rem; color: var(--muted); }
+.player-guest-btn {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--gold);
+  font-weight: 500;
+  cursor: pointer;
+  border-top: 1px dashed var(--border);
+}
+.player-guest-btn:hover { background: rgba(201,168,76,0.08); }
+
+/* DANGER ZONE */
+.danger-zone {
+  border: 1.5px solid #FCA5A5;
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+
+.danger-zone-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--error);
+  margin-bottom: 16px;
+}
+
+.danger-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #FEE2E2;
+}
+
+.danger-action:last-child { border-bottom: none; }
+.danger-action-label { font-size: 0.9rem; font-weight: 500; }
+.danger-action-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+/* RESPONSIVE */
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .main { padding: 24px 20px; }
+  .field-row { grid-template-columns: 1fr; }
+  .player-row { grid-template-columns: 1fr 1fr; }
+  .player-row > *:nth-child(n+4) { grid-column: span 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:20px;">
+    <a href="index.html" class="topbar-logo">4FORE <span>LEAGUE</span></a>
+    <span style="color:rgba(245,240,232,0.3);">|</span>
+    <span class="topbar-round-name" id="topbarRoundName">Round Settings</span>
+  </div>
+  <div class="topbar-right">
+    <a href="dashboard.html" class="topbar-back">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Dashboard
+    </a>
+    <button class="btn-signout" onclick="auth.signOut()">Sign Out</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Round Settings</div>
+      <button class="nav-item active" data-section="info" onclick="showSection('info', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Round Info
+      </button>
+      <button class="nav-item" data-section="players" onclick="showSection('players', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Players
+      </button>
+      <button class="nav-item" data-section="declarations" onclick="showSection('declarations', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Declarations
+      </button>
+      <button class="nav-item" data-section="scoring" onclick="showSection('scoring', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Scoring
+      </button>
+      <button class="nav-item" data-section="corrections" onclick="showSection('corrections', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Corrections
+      </button>
+      <button class="nav-item" data-section="access" onclick="showSection('access', this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Access &amp; Control
+      </button>
+    </div>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Links</div>
+      <a class="nav-item" id="scorecardLink" href="#">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        View Scorecard
+      </a>
+      <a class="nav-item" href="dashboard.html">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ROUND INFO -->
+    <div class="section active" id="sec-info">
+      <div class="section-title">Round Info</div>
+      <div class="section-sub">Edit the basic details of this round.</div>
+
+      <div class="card">
+        <div class="card-title">Details</div>
+        <div class="field-row">
+          <div class="field">
+            <label for="editName">Round Name</label>
+            <input id="editName" type="text" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="editCourse">Course Name</label>
+            <input id="editCourse" type="text" maxlength="80">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="editDate">Date</label>
+            <input id="editDate" type="date">
+          </div>
+          <div class="field">
+            <label for="editHoles">Holes</label>
+            <select id="editHoles">
+              <option value="9">9</option>
+              <option value="18">18</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="saveRoundInfo()">Save Changes</button>
+          <span class="status-msg" id="infoStatus"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Join Code</div>
+        <p style="font-size:1.4rem;font-family:'Bebas Neue',sans-serif;color:var(--green);letter-spacing:0.15em;" id="joinCodeDisplay">—</p>
+        <p class="field-hint">Share this code with players to join on round.html</p>
+      </div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div class="section" id="sec-players">
+      <div class="section-title">Players</div>
+      <div class="section-sub">Manage who's in this round. Lock the round to freeze all scoring.</div>
+
+      <div class="card">
+        <div class="card-title">Current Players</div>
+        <div id="playerRowsWrap"></div>
+        <div class="btn-row" style="margin-top:12px;">
+          <button class="btn btn-green" onclick="saveAllPlayers()">Save Player Changes</button>
+          <span class="status-msg" id="playersStatus"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Add Player</div>
+        <div class="field">
+          <label>Search or add a player</label>
+          <div class="player-search-wrap">
+            <input type="text" id="addPlayerSearch" placeholder="Name or email…" autocomplete="off">
+            <div class="player-search-results" id="addPlayerResults"></div>
+          </div>
+        </div>
+        <span class="status-msg" id="addPlayerStatus"></span>
+      </div>
+    </div>
+
+    <!-- DECLARATIONS -->
+    <div class="section" id="sec-declarations">
+      <div class="section-title">Declarations</div>
+      <div class="section-sub">Set per-round limits for each declaration type. Default is 2 per player.</div>
+
+      <div class="card">
+        <div class="card-title">Limits per Player</div>
+        <div class="decl-grid" id="declGrid"></div>
+        <p class="field-hint">Set 0 to disable a declaration type entirely for this round.</p>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-green" onclick="saveDeclLimits()">Save Limits</button>
+          <span class="status-msg" id="declStatus"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCORING -->
+    <div class="section" id="sec-scoring">
+      <div class="section-title">Scoring Config</div>
+      <div class="section-sub">Toggle moment bonuses on or off for this round.</div>
+
+      <div class="card">
+        <div class="card-title">Moment Bonuses</div>
+        <div id="momentToggles"></div>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-green" onclick="saveMomentsConfig()">Save Config</button>
+          <span class="status-msg" id="scoringStatus"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CORRECTIONS -->
+    <div class="section" id="sec-corrections">
+      <div class="section-title">Score Corrections</div>
+      <div class="section-sub">Edit any player's score with a required correction note. All changes are logged.</div>
+
+      <div class="card">
+        <div class="card-title">Correct a Score</div>
+        <div class="field-row">
+          <div class="field">
+            <label for="corrPlayer">Player</label>
+            <select id="corrPlayer"></select>
+          </div>
+          <div class="field">
+            <label for="corrHole">Hole</label>
+            <select id="corrHole"></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="corrNew">New Strokes</label>
+            <input id="corrNew" type="number" min="1" max="20" placeholder="e.g. 4">
+          </div>
+          <div class="field">
+            <label for="corrNote">Correction Note</label>
+            <input id="corrNote" type="text" placeholder="Reason for correction…" maxlength="200">
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="submitCorrection()">Apply Correction</button>
+          <span class="status-msg" id="corrStatus"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Correction Log</div>
+        <div id="correctionLog" style="color:var(--muted);font-size:0.88rem;">Loading…</div>
+      </div>
+    </div>
+
+    <!-- ACCESS -->
+    <div class="section" id="sec-access">
+      <div class="section-title">Access &amp; Control</div>
+      <div class="section-sub">Manage round visibility, locking, and commissioner transfer.</div>
+
+      <div class="card">
+        <div class="card-title">Settings</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">Public Round</div>
+            <div class="toggle-row-sub">Anyone with the code can join.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="accessPublic">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">Lock Round</div>
+            <div class="toggle-row-sub">Prevents all scoring changes. Players can still view.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="accessLocked">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-green" onclick="saveAccess()">Save Settings</button>
+          <span class="status-msg" id="accessStatus"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Transfer Commissioner</div>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:16px;">Assign a different registered user as commissioner for this round. This cannot be undone.</p>
+        <div class="field">
+          <label for="transferSearch">New Commissioner</label>
+          <div class="player-search-wrap">
+            <input type="text" id="transferSearch" placeholder="Name or email…" autocomplete="off">
+            <div class="player-search-results" id="transferResults"></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-outline" id="transferBtn" onclick="transferCommissioner()" disabled>Transfer</button>
+          <span class="status-msg" id="transferStatus"></span>
+        </div>
+      </div>
+
+      <div class="danger-zone">
+        <div class="danger-zone-title">Danger Zone</div>
+        <div class="danger-action">
+          <div>
+            <div class="danger-action-label">End Round</div>
+            <div class="danger-action-sub">Marks the round as ended. Scores are preserved.</div>
+          </div>
+          <button class="btn-danger btn" onclick="endRound()">End Round</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const params  = new URLSearchParams(window.location.search);
+const roundId = params.get('round');
+
+const DECL_TYPES = [
+  { key: 'mulligan',   label: 'Mulligan' },
+  { key: 'sandbagg',  label: 'Sandbagger' },
+  { key: 'comeback',  label: 'Comeback Kid' },
+  { key: 'shortcut',  label: 'Short Cut' },
+  { key: 'cys',       label: 'Call Your Score' },
+  { key: 'pressure',  label: 'Pressure Putt' },
+];
+
+const MOMENT_TYPES = [
+  { key: 'hio',   label: 'Hole in One',    pts: 44 },
+  { key: 'sand',  label: 'Sandy',          pts: 5  },
+  { key: 'chip',  label: 'Chip-in',        pts: 8  },
+  { key: 'pap',   label: 'Putt for Par',   pts: 3  },
+];
+
+let round = null;
+let players = [];
+let transferUserId = null;
+let addPlayerSearchTimer = null;
+let transferSearchTimer = null;
+
+(async () => {
+  if (!roundId) {
+    document.querySelector('.main').innerHTML = '<p style="padding:40px;color:var(--error);">No round ID specified.</p>';
+    return;
+  }
+
+  const session = await auth.requireAuth();
+  const user = session.user;
+
+  // Load round
+  const { data: r, error } = await window.sb
+    .from('rounds')
+    .select('id, name, course_name, holes, is_public, locked, status, code, decl_limits, moments_enabled, commissioner_user_id, created_at')
+    .eq('id', roundId)
+    .single();
+
+  if (error || !r) {
+    document.querySelector('.main').innerHTML = '<p style="padding:40px;color:var(--error);">Round not found.</p>';
+    return;
+  }
+
+  if (r.commissioner_user_id !== user.id) {
+    document.querySelector('.main').innerHTML = '<p style="padding:40px;color:var(--error);">Access denied — you are not the commissioner of this round.</p>';
+    return;
+  }
+
+  round = r;
+
+  // Topbar name
+  document.getElementById('topbarRoundName').textContent = r.name || 'Round Settings';
+  document.getElementById('scorecardLink').href = `scorecard.html?round=${roundId}`;
+
+  // Load players
+  const { data: ps } = await window.sb
+    .from('round_players')
+    .select('*')
+    .eq('round_id', roundId)
+    .order('player_index');
+
+  players = ps || [];
+
+  // Populate fields
+  populateRoundInfo();
+  populatePlayerRows();
+  populateDeclGrid();
+  populateMomentToggles();
+  populateAccessToggles();
+  populateCorrectionDropdowns();
+  loadCorrectionLog();
+
+  // Add player search
+  initAddPlayerSearch(user.id);
+  initTransferSearch();
+})();
+
+// ── Round Info ────────────────────────────────────────────────────────────
+function populateRoundInfo() {
+  document.getElementById('editName').value   = round.name || '';
+  document.getElementById('editCourse').value = round.course_name || '';
+  document.getElementById('editHoles').value  = String(round.holes || 18);
+  document.getElementById('joinCodeDisplay').textContent = round.code || '—';
+
+  if (round.created_at) {
+    document.getElementById('editDate').value = round.created_at.slice(0, 10);
+  }
+}
+
+window.saveRoundInfo = async function() {
+  const status = document.getElementById('infoStatus');
+  const name   = document.getElementById('editName').value.trim();
+  const course = document.getElementById('editCourse').value.trim();
+  const holes  = parseInt(document.getElementById('editHoles').value);
+
+  if (!name) { status.textContent = 'Round name is required.'; status.className = 'status-msg status-err'; return; }
+
+  status.textContent = 'Saving…';
+  status.className = 'status-msg';
+
+  const { error } = await window.sb
+    .from('rounds')
+    .update({ name, course_name: course || null, holes })
+    .eq('id', roundId);
+
+  if (error) {
+    status.textContent = error.message;
+    status.className = 'status-msg status-err';
+  } else {
+    round.name = name;
+    round.course_name = course;
+    round.holes = holes;
+    document.getElementById('topbarRoundName').textContent = name;
+    status.textContent = 'Saved.';
+    status.className = 'status-msg status-ok';
+  }
+};
+
+// ── Players ───────────────────────────────────────────────────────────────
+function populatePlayerRows() {
+  const wrap = document.getElementById('playerRowsWrap');
+  if (players.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;">No players yet.</p>';
+    return;
+  }
+
+  // Header
+  wrap.innerHTML = `<div class="player-row" style="border-bottom:2px solid var(--border);padding-bottom:6px;">
+    <div class="player-row-label">Name</div>
+    <div class="player-row-label">Handicap</div>
+    <div class="player-row-label">Multiplier</div>
+    <div class="player-row-label">Head Start</div>
+    <div></div>
+  </div>` + players.map((p, i) => {
+    const claimedBadge = p.user_id
+      ? '<span class="player-badge-claimed">Claimed</span>'
+      : '<span class="player-badge-unclaimed">Unclaimed</span>';
+
+    return `<div class="player-row" id="prow-${i}">
+      <div>
+        <input type="text" id="pname-${i}" value="${escHtml(p.name || '')}" placeholder="Player name">
+        <div style="margin-top:4px;">${claimedBadge}</div>
+      </div>
+      <div><input type="number" id="phcp-${i}" value="${p.handicap_index ?? 0}" min="0" max="54" step="0.1"></div>
+      <div><input type="number" id="pmult-${i}" value="${p.multiplier ?? 1}" min="0.5" max="5" step="0.5"></div>
+      <div><input type="number" id="phs-${i}" value="${p.head_start ?? 0}" min="-10" max="10" step="1"></div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        ${p.user_id ? `<button class="btn-outline btn" style="font-size:0.75rem;padding:5px 10px;" onclick="resetClaim(${i})">Unclaim</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.saveAllPlayers = async function() {
+  const status = document.getElementById('playersStatus');
+  status.textContent = 'Saving…';
+  status.className = 'status-msg';
+
+  const updates = players.map((p, i) => ({
+    id: p.id,
+    name: document.getElementById('pname-' + i)?.value?.trim() || p.name,
+    handicap_index: parseFloat(document.getElementById('phcp-' + i)?.value) || 0,
+    multiplier: parseFloat(document.getElementById('pmult-' + i)?.value) || 1,
+    head_start: parseInt(document.getElementById('phs-' + i)?.value) || 0,
+  }));
+
+  let hasError = false;
+  for (const row of updates) {
+    const { id, ...fields } = row;
+    const { error } = await window.sb.from('round_players').update(fields).eq('id', id);
+    if (error) { hasError = true; break; }
+  }
+
+  if (hasError) {
+    status.textContent = 'Error saving some player changes.';
+    status.className = 'status-msg status-err';
+  } else {
+    status.textContent = 'Saved.';
+    status.className = 'status-msg status-ok';
+  }
+};
+
+window.resetClaim = async function(i) {
+  if (!confirm(`Remove the linked account from ${players[i].name}? They will need to re-claim their spot.`)) return;
+  const { error } = await window.sb
+    .from('round_players')
+    .update({ user_id: null })
+    .eq('id', players[i].id);
+
+  if (!error) {
+    players[i].user_id = null;
+    populatePlayerRows();
+  }
+};
+
+// ── Add player search ─────────────────────────────────────────────────────
+function initAddPlayerSearch() {
+  const input   = document.getElementById('addPlayerSearch');
+  const results = document.getElementById('addPlayerResults');
+
+  input.addEventListener('input', () => {
+    clearTimeout(addPlayerSearchTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { results.classList.remove('open'); return; }
+    addPlayerSearchTimer = setTimeout(() => doPlayerSearch(q, results, input, false), 300);
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => results.classList.remove('open'), 200);
+  });
+}
+
+async function doPlayerSearch(q, resultsEl, inputEl, forTransfer) {
+  const { data } = await window.sb
+    .from('profiles')
+    .select('id, display_name, email, handicap_index')
+    .or(`display_name.ilike.%${q}%,email.ilike.%${q}%`)
+    .limit(5);
+
+  const items = data || [];
+  const existingUserIds = players.map(p => p.user_id).filter(Boolean);
+  const filtered = forTransfer ? items : items.filter(p => !existingUserIds.includes(p.id));
+
+  let html = filtered.map(p => {
+    const displayName = p.display_name || p.email?.split('@')[0] || 'Unknown';
+    const hcp = p.handicap_index != null ? `HCP ${p.handicap_index}` : '';
+    const fn = forTransfer
+      ? `selectTransferUser('${p.id}','${escAttr(displayName)}')`
+      : `addRegisteredPlayerToRound('${p.id}','${escAttr(displayName)}','${escAttr(p.email||'')}',${p.handicap_index ?? 'null'})`;
+    return `<div class="player-search-result" onmousedown="${fn}">
+      <span class="player-search-result-name">${escHtml(displayName)}</span>
+      <span class="player-search-result-meta">${escHtml(hcp)}</span>
+    </div>`;
+  }).join('');
+
+  if (!forTransfer) {
+    html += `<div class="player-guest-btn" onmousedown="addGuestPlayerToRound('${escAttr(q)}')">+ Add "${escHtml(q)}" as guest</div>`;
+  }
+
+  resultsEl.innerHTML = html || '<div style="padding:10px 14px;font-size:0.85rem;color:var(--muted);">No results found.</div>';
+  resultsEl.classList.add('open');
+}
+
+window.addRegisteredPlayerToRound = async function(userId, name, email, handicapIndex) {
+  const status = document.getElementById('addPlayerStatus');
+  status.textContent = 'Adding…';
+  status.className = 'status-msg';
+
+  const nextIndex = players.length;
+  const { data, error } = await window.sb
+    .from('round_players')
+    .insert({
+      round_id: roundId,
+      player_index: nextIndex,
+      name,
+      user_id: userId,
+      handicap_index: handicapIndex || 0,
+      multiplier: 1,
+      head_start: 0,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    status.textContent = error.message;
+    status.className = 'status-msg status-err';
+  } else {
+    players.push(data);
+    populatePlayerRows();
+    populateCorrectionDropdowns();
+    document.getElementById('addPlayerSearch').value = '';
+    document.getElementById('addPlayerResults').classList.remove('open');
+    status.textContent = `${name} added.`;
+    status.className = 'status-msg status-ok';
+  }
+};
+
+window.addGuestPlayerToRound = async function(name) {
+  const status = document.getElementById('addPlayerStatus');
+  status.textContent = 'Adding…';
+  status.className = 'status-msg';
+
+  const nextIndex = players.length;
+  const { data, error } = await window.sb
+    .from('round_players')
+    .insert({
+      round_id: roundId,
+      player_index: nextIndex,
+      name: name.trim(),
+      user_id: null,
+      handicap_index: 0,
+      multiplier: 1,
+      head_start: 0,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    status.textContent = error.message;
+    status.className = 'status-msg status-err';
+  } else {
+    players.push(data);
+    populatePlayerRows();
+    populateCorrectionDropdowns();
+    document.getElementById('addPlayerSearch').value = '';
+    document.getElementById('addPlayerResults').classList.remove('open');
+    status.textContent = `${name} added as guest.`;
+    status.className = 'status-msg status-ok';
+  }
+};
+
+// ── Declarations ──────────────────────────────────────────────────────────
+function populateDeclGrid() {
+  const grid = document.getElementById('declGrid');
+  const limits = round.decl_limits || {};
+
+  grid.innerHTML = DECL_TYPES.map(d => `
+    <div class="decl-field">
+      <div class="decl-field-label">${d.label}</div>
+      <input type="number" id="decl-${d.key}" value="${limits[d.key] ?? 2}" min="0" max="10">
+    </div>
+  `).join('');
+}
+
+window.saveDeclLimits = async function() {
+  const status = document.getElementById('declStatus');
+  status.textContent = 'Saving…';
+  status.className = 'status-msg';
+
+  const limits = {};
+  DECL_TYPES.forEach(d => {
+    limits[d.key] = parseInt(document.getElementById('decl-' + d.key)?.value) ?? 2;
+  });
+
+  const { error } = await window.sb
+    .from('rounds')
+    .update({ decl_limits: limits })
+    .eq('id', roundId);
+
+  if (error) {
+    status.textContent = error.message;
+    status.className = 'status-msg status-err';
+  } else {
+    round.decl_limits = limits;
+    status.textContent = 'Saved.';
+    status.className = 'status-msg status-ok';
+  }
+};
+
+// ── Moments ───────────────────────────────────────────────────────────────
+function populateMomentToggles() {
+  const wrap = document.getElementById('momentToggles');
+  const cfg  = round.moments_enabled || {};
+
+  // Default: all enabled
+  wrap.innerHTML = MOMENT_TYPES.map(m => {
+    const enabled = cfg[m.key] !== false;
+    return `<div class="toggle-row">
+      <div>
+        <div class="toggle-row-label">${m.label} <span style="color:var(--gold);font-weight:600;">+${m.pts} pts</span></div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="moment-${m.key}" ${enabled ? 'checked' : ''}>
+        <span class="toggle-track"></span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+window.saveMomentsConfig = async function() {
+  const status = document.getElementById('scoringStatus');
+  status.textContent = 'Saving…';
+  status.className = 'status-msg';
+
+  const cfg = {};
+  MOMENT_TYPES.forEach(m => {
+    cfg[m.key] = document.getElementById('moment-' + m.key)?.checked ?? true;
+  });
+
+  const { error } = await window.sb
+    .from('rounds')
+    .update({ moments_enabled: cfg })
+    .eq('id', roundId);
+
+  if (error) {
+    status.textContent = error.message;
+    status.className = 'status-msg status-err';
+  } else {
+    round.moments_enabled = cfg;
+    status.textContent = 'Saved.';
+    status.className = 'status-msg status-ok';
+  }
+};
+
+// ── Corrections ───────────────────────────────────────────────────────────
+function populateCorrectionDropdowns() {
+  const playerSel = document.getElementById('corrPlayer');
+  const holeSel   = document.getElementById('corrHole');
+  const holes     = round.holes || 18;
+
+  playerSel.innerHTML = players.map((p, i) =>
+    `<option value="${i}">${escHtml(p.name)}</option>`
+  ).join('');
+
+  holeSel.innerHTML = Array.from({ length: holes }, (_, i) =>
+    `<option value="${i + 1}">Hole ${i + 1}</option>`
+  ).join('');
+}
+
+window.submitCorrection = async function() {
+  const status  = document.getElementById('corrStatus');
+  const session = await auth.getSession();
+  const pi      = parseInt(document.getElementById('corrPlayer').value);
+  const hole    = parseInt(document.getElementById('corrHole').value);
+  const newStr  = parseInt(document.getElementById('corrNew').value);
+  const note    = document.getElementById('corrNote').value.trim();
+
+  if (!note) {
+    status.textContent = 'A correction note is required.';
+    status.className = 'status-msg status-err';
+    return;
+  }
+
+  if (!newStr || newStr < 1) {
+    status.textContent = 'Enter a valid stroke count.';
+    status.className = 'status-msg status-err';
+    return;
+  }
+
+  status.textContent = 'Applying…';
+  status.className = 'status-msg';
+
+  // Get old score
+  const { data: existing } = await window.sb
+    .from('hole_scores')
+    .select('strokes')
+    .eq('round_id', roundId)
+    .eq('player_index', pi)
+    .eq('hole_number', hole)
+    .single();
+
+  const oldStrokes = existing?.strokes ?? null;
+
+  // Upsert hole score
+  const { error: scoreErr } = await window.sb
+    .from('hole_scores')
+    .upsert({
+      round_id: roundId,
+      player_index: pi,
+      hole_number: hole,
+      strokes: newStr,
+    }, { onConflict: 'round_id,player_index,hole_number' });
+
+  if (scoreErr) {
+    status.textContent = scoreErr.message;
+    status.className = 'status-msg status-err';
+    return;
+  }
+
+  // Log correction
+  await window.sb.from('score_corrections').insert({
+    round_id: roundId,
+    player_index: pi,
+    hole_number: hole,
+    old_strokes: oldStrokes,
+    new_strokes: newStr,
+    note,
+    corrected_by: session?.user?.id || null,
+  });
+
+  document.getElementById('corrNew').value  = '';
+  document.getElementById('corrNote').value = '';
+  status.textContent = 'Correction applied.';
+  status.className = 'status-msg status-ok';
+  loadCorrectionLog();
+};
+
+async function loadCorrectionLog() {
+  const logEl = document.getElementById('correctionLog');
+  const { data } = await window.sb
+    .from('score_corrections')
+    .select('*')
+    .eq('round_id', roundId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (!data || data.length === 0) {
+    logEl.textContent = 'No corrections yet.';
+    return;
+  }
+
+  logEl.innerHTML = `<table class="corrections-table">
+    <thead><tr>
+      <th>Player</th><th>Hole</th><th>Was</th><th>Now</th><th>Note</th><th>When</th>
+    </tr></thead>
+    <tbody>
+      ${data.map(c => {
+        const playerName = players.find(p => p.player_index === c.player_index)?.name || `P${c.player_index}`;
+        const when = new Date(c.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `<tr>
+          <td>${escHtml(playerName)}</td>
+          <td>${c.hole_number}</td>
+          <td>${c.old_strokes ?? '—'}</td>
+          <td>${c.new_strokes}</td>
+          <td>${escHtml(c.note)}</td>
+          <td style="white-space:nowrap;">${when}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ── Access ────────────────────────────────────────────────────────────────
+function populateAccessToggles() {
+  document.getElementById('accessPublic').checked = round.is_public !== false;
+  document.getElementById('accessLocked').checked = round.locked === true;
+}
+
+window.saveAccess = async function() {
+  const status   = document.getElementById('accessStatus');
+  const isPublic = document.getElementById('accessPublic').checked;
+  const locked   = document.getElementById('accessLocked').checked;
+
+  status.textContent = 'Saving…';
+  status.className = 'status-msg';
+
+  const { error } = await window.sb
+    .from('rounds')
+    .update({ is_public: isPublic, locked })
+    .eq('id', roundId);
+
+  if (error) {
+    status.textContent = error.message;
+    status.className = 'status-msg status-err';
+  } else {
+    round.is_public = isPublic;
+    round.locked    = locked;
+    status.textContent = 'Saved.';
+    status.className = 'status-msg status-ok';
+  }
+};
+
+// ── Transfer commissioner ─────────────────────────────────────────────────
+function initTransferSearch() {
+  const input   = document.getElementById('transferSearch');
+  const results = document.getElementById('transferResults');
+
+  input.addEventListener('input', () => {
+    clearTimeout(transferSearchTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { results.classList.remove('open'); transferUserId = null; document.getElementById('transferBtn').disabled = true; return; }
+    transferSearchTimer = setTimeout(() => doPlayerSearch(q, results, input, true), 300);
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => results.classList.remove('open'), 200);
+  });
+}
+
+window.selectTransferUser = function(userId, name) {
+  transferUserId = userId;
+  document.getElementById('transferSearch').value = name;
+  document.getElementById('transferResults').classList.remove('open');
+  document.getElementById('transferBtn').disabled = false;
+};
+
+window.transferCommissioner = async function() {
+  const status = document.getElementById('transferStatus');
+  if (!transferUserId) return;
+  if (!confirm('Transfer commissioner rights to this user? You will lose commissioner access to this round.')) return;
+
+  status.textContent = 'Transferring…';
+  status.className = 'status-msg';
+
+  const { error } = await window.sb
+    .from('rounds')
+    .update({ commissioner_user_id: transferUserId })
+    .eq('id', roundId);
+
+  if (error) {
+    status.textContent = error.message;
+    status.className = 'status-msg status-err';
+  } else {
+    status.textContent = 'Transfer complete. Redirecting…';
+    status.className = 'status-msg status-ok';
+    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+  }
+};
+
+// ── End round ─────────────────────────────────────────────────────────────
+window.endRound = async function() {
+  if (!confirm('End this round? This marks it as ended — scores are preserved but no more scoring changes will be allowed.')) return;
+
+  const { error } = await window.sb
+    .from('rounds')
+    .update({ status: 'ended', locked: true })
+    .eq('id', roundId);
+
+  if (!error) {
+    round.status = 'ended';
+    round.locked = true;
+    document.getElementById('accessLocked').checked = true;
+    alert('Round ended.');
+  }
+};
+
+// ── Section nav ───────────────────────────────────────────────────────────
+function showSection(name, navEl) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+}
+
+// ── Escape helpers ────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(str) {
+  return String(str ?? '').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
