@@ -967,18 +967,17 @@ canvas#hcp-chart { width: 100%; height: 100%; }
         <div class="tier-grid">
           <div class="tier-card" id="tier-free">
             <div class="tier-card-name">Free</div>
-            <div class="tier-card-price">£0 <span>/ mo</span></div>
+            <div class="tier-card-price">$0 <span>/ mo</span></div>
             <div class="tier-card-feature">Join rounds as a guest. No history or stats.</div>
           </div>
-          <div class="tier-card current" id="tier-pro">
-            <span class="current-badge">Current</span>
+          <div class="tier-card" id="tier-pro" onclick="subscribeToPlan('price_1T3WBHCqxSWVge4cyLa1Yr4y', 'player_pro', this)">
             <div class="tier-card-name">Player Pro</div>
-            <div class="tier-card-price">£4.99 <span>/ mo</span></div>
+            <div class="tier-card-price">$4.99 <span>/ mo</span></div>
             <div class="tier-card-feature">Full history, stats, declarations, moment bonuses.</div>
           </div>
-          <div class="tier-card" id="tier-commissioner">
+          <div class="tier-card" id="tier-commissioner" onclick="subscribeToPlan('price_1T3WBlCqxSWVge4cTBiFSyNt', 'commissioner', this)">
             <div class="tier-card-name">Commissioner</div>
-            <div class="tier-card-price">£9.99 <span>/ mo</span></div>
+            <div class="tier-card-price">$9.99 <span>/ mo</span></div>
             <div class="tier-card-feature">Create leagues, manage seasons, admin controls.</div>
           </div>
         </div>
@@ -1342,6 +1341,60 @@ function loadSubscription(profile) {
     } else {
       document.getElementById('sub-next-billing').textContent = 'Active subscription';
     }
+  }
+}
+
+async function subscribeToPlan(priceId, tierName, card) {
+  const { data: profile } = await auth.getProfile(currentUser.id);
+  if (!profile?.stripe_customer_id) {
+    showToast('No billing account found.', true);
+    return;
+  }
+
+  // Don't re-subscribe to current plan
+  if (card.classList.contains('current')) {
+    showToast('You\'re already on this plan.');
+    return;
+  }
+
+  card.style.opacity = '0.6';
+  card.style.pointerEvents = 'none';
+
+  try {
+    const EDGE_BASE = 'https://jfegilifmksmngslnbgm.supabase.co/functions/v1';
+    const res = await fetch(`${EDGE_BASE}/create-subscription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerId: profile.stripe_customer_id,
+        priceId,
+      }),
+    });
+    const data = await res.json();
+    console.log('subscription response:', data);
+    if (data.error) throw new Error(data.error);
+
+    // Update subscription_tier in profiles table
+    await window.sb.from('profiles').update({ subscription_tier: tierName }).eq('id', currentUser.id);
+
+    // Update UI — mark new card as current, remove from others
+    document.querySelectorAll('.tier-card').forEach(c => {
+      c.classList.remove('current');
+      c.querySelector('.current-badge')?.remove();
+    });
+    const badge = document.createElement('span');
+    badge.className = 'current-badge';
+    badge.textContent = 'Current';
+    card.classList.add('current');
+    card.insertBefore(badge, card.firstChild);
+
+    showToast(`Upgraded to ${card.querySelector('.tier-card-name').textContent}!`);
+  } catch (err) {
+    console.error('subscription error:', err);
+    showToast(err.message || 'Failed to subscribe.', true);
+  } finally {
+    card.style.opacity = '';
+    card.style.pointerEvents = '';
   }
 }
 
