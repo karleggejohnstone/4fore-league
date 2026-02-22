@@ -905,6 +905,11 @@
     });
 
     try {
+      // Get current user FIRST — needed for commissioner_user_id on the insert
+      const { data: { session } } = await window.sb.auth.getSession();
+      const userId = session?.user?.id || null;
+      console.log('[startRound] userId:', userId);
+
       // Insert round with placeholder code (must satisfy NOT NULL + length=4 check)
       const { data: roundData, error: roundErr } = await window.sb
         .from('rounds')
@@ -912,10 +917,14 @@
         .select('id')
         .single();
 
-      if (roundErr) throw roundErr;
+      if (roundErr) {
+        console.error('[startRound] rounds insert error:', roundErr);
+        throw roundErr;
+      }
 
       const roundId   = roundData.id;
       const roundCode = codeFromUUID(roundId);
+      console.log('[startRound] round created:', roundId, 'code:', roundCode);
 
       // Update with the real derived code
       const { error: codeErr } = await window.sb
@@ -923,11 +932,10 @@
         .update({ code: roundCode })
         .eq('id', roundId);
 
-      if (codeErr) throw codeErr;
-
-      // Get current user to tag the round creator
-      const { data: { session } } = await window.sb.auth.getSession();
-      const userId = session?.user?.id || null;
+      if (codeErr) {
+        console.error('[startRound] code update error:', codeErr);
+        throw codeErr;
+      }
 
       // Insert all players — tag player 0 (round creator) with user_id
       const playerRows = players.map((p, idx) => ({
@@ -948,8 +956,8 @@
       window.location.href = 'scorecard.html?round=' + roundId;
 
     } catch (err) {
-      console.error('startRound error:', err);
-      showToast('Could not save round — check connection', true);
+      console.error('[startRound] caught error:', err?.message || err, err?.details || '', err?.hint || '');
+      showToast('Could not save round — ' + (err?.message || 'check connection'), true);
       btn.disabled = false;
       updateStartButton();
     }
