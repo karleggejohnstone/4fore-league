@@ -4,371 +4,49 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign Up · 4FORE League</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://js.stripe.com/v3/"></script>
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
 <style>
-  :root {
-    --cream:  #F5F0E8;
-    --cream2: #EDE8DF;
-    --green:  #1B3D2A;
-    --green2: #2A5C3F;
-    --gold:   #C9A84C;
-    --gold2:  #E8C96A;
-    --text:   #1A1A1A;
-    --muted:  #6B6B6B;
-    --error:  #B91C1C;
-    --border: #D6CFC4;
-  }
+/* Two-panel layout */
+body { display:flex; min-height:100vh; }
+.panel-brand { width:42%; background:var(--color-green); display:flex; flex-direction:column; justify-content:center; padding:60px 48px; }
+.panel-form  { flex:1; display:flex; align-items:center; justify-content:center; padding:48px 40px; background:var(--color-bg-cream); overflow-y:auto; }
+.brand-logo  { font-family:var(--font-display); font-size:2.2rem; color:var(--color-gold); letter-spacing:0.05em; margin-bottom:32px; text-decoration:none; display:block; }
+.brand-logo span { color:#3ddc84; }
+.brand-headline { font-family:var(--font-display); font-size:2.6rem; color:white; letter-spacing:0.02em; line-height:1.1; margin-bottom:16px; }
+.brand-body { font-size:0.95rem; color:rgba(245,240,232,0.65); line-height:1.6; max-width:320px; }
+.brand-features { list-style:none; margin-top:24px; display:flex; flex-direction:column; gap:10px; }
+.brand-features li { font-size:0.88rem; color:rgba(245,240,232,0.75); display:flex; align-items:center; gap:10px; }
+.brand-features li::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--color-gold); flex-shrink:0; }
+.form-wrap  { width:100%; max-width:400px; }
+.form-title { font-family:var(--font-display); font-size:2rem; color:var(--color-green); letter-spacing:0.03em; margin-bottom:4px; }
+.form-sub   { font-size:0.88rem; color:var(--color-muted); margin-bottom:32px; }
+.form-sub a { color:var(--color-green); font-weight:600; }
+@media (max-width:768px) { .panel-brand { display:none; } .panel-form { padding:40px 24px; } }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* Step indicator */
+.step-indicator { display:flex; gap:6px; margin-bottom:32px; }
+.step-dot { flex:1; height:3px; background:var(--color-border); border-radius:2px; transition:background 0.3s; }
+.step-dot.active { background:var(--color-green); }
+.step-dot.done   { background:var(--color-gold); }
+.step-panel { display:none; }
+.step-panel.active { display:block; }
 
-  body {
-    background: var(--cream);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
+/* Trial badge */
+.trial-badge { display:inline-flex; align-items:center; gap:6px; background:var(--color-green-tint); border:1px solid rgba(27,61,42,0.2); color:var(--color-green); font-size:0.78rem; font-weight:600; padding:4px 10px; border-radius:20px; margin-bottom:20px; }
 
-  /* ── LEFT PANEL ── */
-  .panel-brand {
-    background: var(--green);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 56px 64px;
-    position: relative;
-    overflow: hidden;
-  }
+/* Stripe card element */
+.card-element-wrap { padding:12px 14px; background:var(--color-white); border:1.5px solid var(--color-border); border-radius:4px; transition:border-color 0.2s; }
+.card-element-wrap.focused { border-color:var(--color-green); }
+.card-note { font-size:0.78rem; color:var(--color-muted); margin-top:6px; display:flex; align-items:center; gap:6px; }
+.card-note svg { flex-shrink:0; }
 
-  .panel-brand::before {
-    content: '';
-    position: absolute;
-    bottom: -80px;
-    right: -80px;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
-  }
-
-  .brand-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 3rem;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-    text-decoration: none;
-  }
-
-  .brand-logo span { color: #3ddc84; }
-
-  .brand-hero {
-    position: relative;
-    z-index: 1;
-  }
-
-  .brand-eyebrow {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: rgba(201,168,76,0.7);
-    margin-bottom: 16px;
-  }
-
-  .brand-headline {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(3rem, 5vw, 5rem);
-    line-height: 0.95;
-    color: var(--cream);
-    margin-bottom: 24px;
-  }
-
-  .brand-headline em {
-    color: var(--gold);
-    font-style: normal;
-  }
-
-  .brand-body {
-    font-size: 1rem;
-    line-height: 1.7;
-    color: rgba(245,240,232,0.65);
-    max-width: 320px;
-  }
-
-  .brand-features {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 32px;
-  }
-
-  .brand-features li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.9rem;
-    color: rgba(245,240,232,0.75);
-  }
-
-  .brand-features li::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--gold);
-    flex-shrink: 0;
-  }
-
-  .brand-footer {
-    font-size: 0.8rem;
-    color: rgba(245,240,232,0.3);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  /* ── RIGHT PANEL ── */
-  .panel-form {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 56px 64px;
-    overflow-y: auto;
-  }
-
-  .form-inner {
-    width: 100%;
-    max-width: 400px;
-  }
-
-  .form-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.4rem;
-    color: var(--green);
-    letter-spacing: 0.03em;
-    margin-bottom: 6px;
-  }
-
-  .form-sub {
-    font-size: 0.9rem;
-    color: var(--muted);
-    margin-bottom: 36px;
-  }
-
-  .form-sub a {
-    color: var(--green);
-    font-weight: 500;
-    text-decoration: none;
-  }
-
-  .form-sub a:hover { text-decoration: underline; }
-
-  /* Steps */
-  .step-indicator {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 32px;
-  }
-
-  .step-dot {
-    flex: 1;
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    transition: background 0.3s;
-  }
-
-  .step-dot.active { background: var(--green); }
-  .step-dot.done   { background: var(--gold); }
-
-  .step-panel { display: none; }
-  .step-panel.active { display: block; }
-
-  /* Fields */
-  .field { margin-bottom: 20px; }
-
-  .field label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--green);
-    margin-bottom: 6px;
-  }
-
-  .field input {
-    width: 100%;
-    padding: 12px 14px;
-    background: white;
-    border: 1.5px solid var(--border);
-    border-radius: 4px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .field input:focus { border-color: var(--green); }
-  .field input.error { border-color: var(--error); }
-
-  .field-error {
-    font-size: 0.78rem;
-    color: var(--error);
-    margin-top: 4px;
-    display: none;
-  }
-
-  /* Consent */
-  .consent-block {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 20px;
-    cursor: pointer;
-  }
-
-  .consent-block input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    margin-top: 2px;
-    accent-color: var(--green);
-  }
-
-  .consent-block span {
-    font-size: 0.82rem;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-
-  .consent-block a {
-    color: var(--green);
-    text-decoration: none;
-  }
-
-  /* Stripe card element */
-  .card-element-wrap {
-    padding: 12px 14px;
-    background: white;
-    border: 1.5px solid var(--border);
-    border-radius: 4px;
-    transition: border-color 0.2s;
-  }
-
-  .card-element-wrap.focused { border-color: var(--green); }
-
-  .card-note {
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-top: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .card-note svg { flex-shrink: 0; }
-
-  /* Button */
-  .btn-submit {
-    width: 100%;
-    padding: 14px;
-    background: var(--green);
-    color: var(--cream);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.2rem;
-    letter-spacing: 0.08em;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    margin-top: 8px;
-  }
-
-  .btn-submit:hover:not(:disabled) { background: var(--green2); transform: translateY(-1px); }
-  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .btn-back {
-    background: transparent;
-    border: 1.5px solid var(--border);
-    color: var(--muted);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-    margin-top: 8px;
-    margin-right: 8px;
-  }
-
-  .btn-back:hover { border-color: var(--green); color: var(--green); }
-
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--error);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 4px;
-    font-size: 0.88rem;
-    font-weight: 500;
-    transition: transform 0.3s;
-    z-index: 999;
-    max-width: 360px;
-    text-align: center;
-  }
-
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.success { background: var(--green); }
-
-  /* Divider */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 24px 0;
-    color: var(--border);
-    font-size: 0.78rem;
-  }
-
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* Trial badge */
-  .trial-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(27,61,42,0.08);
-    border: 1px solid rgba(27,61,42,0.2);
-    color: var(--green);
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    body { grid-template-columns: 1fr; }
-    .panel-brand { display: none; }
-    .panel-form { padding: 40px 24px; }
-  }
+/* Divider */
+.divider { display:flex; align-items:center; gap:12px; margin:24px 0; color:var(--color-border); font-size:0.78rem; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--color-border); }
 </style>
 </head>
 <body>
@@ -376,25 +54,19 @@
 <!-- LEFT: Brand -->
 <div class="panel-brand">
   <a href="index.html" class="brand-logo">4<span>FORE</span></a>
-
-  <div class="brand-hero">
-    <p class="brand-eyebrow">Never Lay Up</p>
-    <h1 class="brand-headline">Play bold.<br><em>Score big.</em></h1>
-    <p class="brand-body">The competitive golf scoring system built for how you actually play. Four scoring layers. Real-time multiplayer. Moments you'll never forget.</p>
-    <ul class="brand-features">
-      <li>Live multiplayer scoring with friends</li>
-      <li>Handicap multipliers & declaration bonuses</li>
-      <li>Moment bonuses — Hole-in-One worth +44 pts</li>
-      <li>Season leaderboards & round history</li>
-    </ul>
-  </div>
-
-  <p class="brand-footer">4FORE League · Never Lay Up</p>
+  <h1 class="brand-headline">Play bold.<br>Score big.</h1>
+  <p class="brand-body">The competitive golf scoring system built for how you actually play. Four scoring layers. Real-time multiplayer. Moments you'll never forget.</p>
+  <ul class="brand-features">
+    <li>Live multiplayer scoring with friends</li>
+    <li>Handicap multipliers & declaration bonuses</li>
+    <li>Moment bonuses — Hole-in-One worth +44 pts</li>
+    <li>Season leaderboards & round history</li>
+  </ul>
 </div>
 
 <!-- RIGHT: Form -->
 <div class="panel-form">
-  <div class="form-inner">
+  <div class="form-wrap">
 
     <div class="trial-badge">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="#1B3D2A"/><path d="M6 3v3.5L8 8" stroke="#1B3D2A" stroke-width="1.2" stroke-linecap="round"/></svg>
@@ -432,7 +104,7 @@
 
     <!-- Step 2: Consent -->
     <div class="step-panel" id="step1">
-      <p style="font-size:0.9rem; color:var(--muted); margin-bottom:24px; line-height:1.6;">
+      <p style="font-size:0.9rem; color:var(--color-muted); margin-bottom:24px; line-height:1.6;">
         Almost there. Review the terms and let us know your comms preferences.
       </p>
       <label class="consent-block">
@@ -448,7 +120,7 @@
       <div class="divider">then</div>
 
       <div>
-        <label style="display:block; font-size:0.8rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:var(--green); margin-bottom:8px;">Card Details</label>
+        <label style="display:block; font-size:0.8rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:var(--color-green); margin-bottom:8px;">Card Details</label>
         <div class="card-element-wrap" id="card-wrap">
           <div id="card-element"></div>
         </div>
@@ -469,8 +141,8 @@
         <div style="width:64px;height:64px;background:rgba(27,61,42,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M6 14L11 19L22 8" stroke="#1B3D2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
-        <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--green);margin-bottom:8px;">You're in!</h2>
-        <p style="color:var(--muted);font-size:0.9rem;line-height:1.6;max-width:280px;margin:0 auto 24px;">Your trial has started. Let's set up your golf profile.</p>
+        <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--color-green);margin-bottom:8px;">You're in!</h2>
+        <p style="color:var(--color-muted);font-size:0.9rem;line-height:1.6;max-width:280px;margin:0 auto 24px;">Your trial has started. Let's set up your golf profile.</p>
         <a href="profile-setup.html" class="btn-submit" style="display:inline-block;text-decoration:none;width:auto;padding:14px 40px;">Set up profile →</a>
       </div>
     </div>

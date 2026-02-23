@@ -4,18 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>4FORE LEAGUE · NEVER LAY UP</title>
-<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
 <style>
+  /* Dark-world token aliases */
   :root {
-    --green: #1a4a2e;
-    --green-mid: #2d7a4f;
+    --dark:         #0d1a12;
+    --green:        var(--color-green);
+    --green-mid:    #2d7a4f;
     --green-bright: #3ddc84;
-    --gold: #c9a84c;
-    --gold-light: #f0d080;
-    --cream: #f5f0e8;
-    --dark: #0d1a12;
-    --red: #c0392b;
-    --white: #ffffff;
+    --gold:         var(--color-gold);
+    --gold-light:   #f0d080;
+    --cream:        var(--color-bg-cream);
+    --red:          var(--color-error);
+    --white:        #ffffff;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +29,7 @@
   body {
     background: var(--dark);
     color: var(--cream);
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--font-body);
     overflow-x: hidden;
   }
 
@@ -39,49 +43,6 @@
     z-index: 1000;
     opacity: 0.4;
   }
-
-  /* NAV */
-  nav {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 100;
-    padding: 20px 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(to bottom, rgba(13,26,18,0.95), transparent);
-  }
-
-  .nav-logo {
-    font-family: 'Black Ops One', cursive;
-    font-size: 1.8rem;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-    text-decoration: none;
-  }
-
-  .nav-logo span { color: var(--green-bright); }
-
-  .nav-links {
-    display: flex;
-    gap: 36px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--cream);
-    text-decoration: none;
-    opacity: 0.7;
-    transition: opacity 0.2s, color 0.2s;
-  }
-
-  .nav-links a:hover { opacity: 1; color: var(--gold); }
 
   /* HERO */
   .hero {
@@ -125,7 +86,7 @@
   }
 
   .hero-eyebrow {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -137,7 +98,7 @@
   }
 
   .hero-title {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(6rem, 15vw, 14rem);
     line-height: 0.85;
     color: var(--gold);
@@ -149,7 +110,7 @@
   .hero-title .four { color: var(--green-bright); }
 
   .hero-subtitle {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(1.2rem, 3vw, 2rem);
     font-weight: 700;
     letter-spacing: 0.25em;
@@ -184,7 +145,7 @@
   .btn-primary {
     background: var(--gold);
     color: var(--dark);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-weight: 900;
     font-size: 1rem;
     letter-spacing: 0.15em;
@@ -203,7 +164,7 @@
   .btn-secondary {
     background: transparent;
     color: var(--cream);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-weight: 700;
     font-size: 1rem;
     letter-spacing: 0.15em;
@@ -236,7 +197,7 @@
   }
 
   .score-card-mini h4 {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -253,7 +214,7 @@
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid rgba(255,255,255,0.06);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.9rem;
   }
 
@@ -266,7 +227,7 @@
     background: rgba(201,168,76,0.15);
     border: 1px solid var(--gold);
     padding: 8px 12px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -301,7 +262,7 @@
   }
 
   .philosophy-strip span {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-weight: 700;
     font-size: 0.85rem;
     letter-spacing: 0.2em;
@@ -317,7 +278,7 @@
   section { position: relative; }
 
   .section-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -327,7 +288,7 @@
   }
 
   .section-title {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(2.5rem, 5vw, 4rem);
     line-height: 1;
     color: var(--gold);
@@ -384,7 +345,7 @@
   .layer-card:hover::before { transform: scaleX(1); }
 
   .layer-number {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 5rem;
     color: rgba(201,168,76,0.1);
     position: absolute;
@@ -394,7 +355,7 @@
   }
 
   .layer-tag {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.25em;
@@ -404,7 +365,7 @@
   }
 
   .layer-name {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.4rem;
     color: var(--gold);
     margin-bottom: 16px;
@@ -436,7 +397,7 @@
   }
 
   .score-table th {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -449,7 +410,7 @@
 
   .score-table td {
     padding: 14px 16px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1rem;
     border-bottom: 1px solid rgba(255,255,255,0.06);
   }
@@ -487,7 +448,7 @@
   .tier-card:hover { border-color: var(--gold); }
 
   .tier-hdcp {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.9rem;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -496,7 +457,7 @@
   }
 
   .tier-label {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.1rem;
     color: var(--cream);
   }
@@ -506,14 +467,14 @@
   }
 
   .tier-mult .normal {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.75rem;
     color: rgba(245,240,232,0.4);
     letter-spacing: 0.1em;
   }
 
   .tier-mult .danger {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.8rem;
     color: var(--gold);
     display: block;
@@ -548,7 +509,7 @@
   }
 
   .decl-condition {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -561,7 +522,7 @@
   }
 
   .decl-name {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.3rem;
     color: var(--gold);
     margin-bottom: 12px;
@@ -582,7 +543,7 @@
   }
 
   .risk-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.15em;
@@ -644,7 +605,7 @@
   }
 
   .moment-name {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-weight: 700;
     font-size: 1rem;
     letter-spacing: 0.1em;
@@ -654,7 +615,7 @@
   }
 
   .moment-pts {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 3rem;
     color: var(--gold);
     line-height: 1;
@@ -688,7 +649,7 @@
   }
 
   .full-scorecard thead th {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -703,7 +664,7 @@
 
   .full-scorecard td {
     padding: 11px 14px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.95rem;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     vertical-align: middle;
@@ -724,7 +685,7 @@
   }
 
   .hole-num {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     color: var(--gold);
     font-size: 1.1rem;
   }
@@ -747,7 +708,7 @@
   }
 
   .summary-table th {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -761,7 +722,7 @@
 
   .summary-table td {
     padding: 16px 20px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     border-bottom: 1px solid rgba(255,255,255,0.07);
     font-size: 1rem;
   }
@@ -795,7 +756,7 @@
   .ref-item:hover { border-color: rgba(201,168,76,0.3); }
 
   .ref-term {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-weight: 700;
     font-size: 0.9rem;
     letter-spacing: 0.05em;
@@ -803,7 +764,7 @@
   }
 
   .ref-val {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-weight: 900;
     font-size: 1rem;
     color: var(--gold);
@@ -820,7 +781,7 @@
   }
 
   .footer-logo {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 2.5rem;
     color: var(--gold);
     margin-bottom: 12px;
@@ -829,7 +790,7 @@
   .footer-logo span { color: var(--green-bright); }
 
   .footer-tagline {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1rem;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -860,39 +821,7 @@
 <body>
 
 <!-- NAV -->
-<nav>
-  <a href="#" class="nav-logo">4<span>FORE</span></a>
-  <ul class="nav-links">
-    <li><a href="#how-it-works">How It Works</a></li>
-    <li><a href="#scoring">Scoring</a></li>
-    <li><a href="#declarations">Declarations</a></li>
-    <li><a href="#moments">Moments</a></li>
-    <li><a href="#scorecard">Scorecard</a></li>
-    <li><a href="#quick-ref">Quick Ref</a></li>
-    <li><a href="round.html" style="color: var(--gold); opacity: 1;">Start Round</a></li>
-    <li><a href="login.html" id="nav-auth-link" style="opacity:1;">Sign In</a></li>
-  </ul>
-</nav>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
-<script src="auth.js"></script>
-<script>
-  (async () => {
-    const session = await auth.getSession();
-    const link = document.getElementById('nav-auth-link');
-    if (session) {
-      link.href = 'account.html';
-      link.textContent = 'Account';
-      link.style.color = 'var(--gold)';
-      const isComm = await auth.canAccess('commissioner');
-      if (isComm) {
-        const li = document.createElement('li');
-        li.innerHTML = '<a href="dashboard.html" style="color:var(--gold);opacity:1;">Dashboard</a>';
-        link.closest('li').before(li);
-      }
-    }
-  })();
-</script>
+<div id="nav-root"></div>
 
 <!-- HERO -->
 <section class="hero">
@@ -983,7 +912,7 @@
   </div>
 
   <div style="margin-top: 48px; padding: 24px 32px; background: rgba(201,168,76,0.07); border-left: 3px solid var(--gold); max-width: 600px;">
-    <p style="font-family: 'Barlow Condensed'; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px;">Handicap Head Start</p>
+    <p style="font-family: 'Bebas Neue'; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px;">Handicap Head Start</p>
     <p style="font-size: 0.95rem; line-height: 1.6; color: rgba(245,240,232,0.75);">Each player begins with half their handicap (rounded down) added to their base points total only — never multiplied. An 18 HCP starts with +9 points. The head start keeps the leaderboard close — but a single big moment can flip it instantly.</p>
   </div>
 </section>
@@ -996,7 +925,7 @@
 
     <div class="scoring-layout">
       <div>
-        <p style="font-family: 'Barlow Condensed'; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-bright); margin-bottom: 24px;">Base Points (Stableford)</p>
+        <p style="font-family: 'Bebas Neue'; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-bright); margin-bottom: 24px;">Base Points (Stableford)</p>
         <table class="score-table">
           <thead>
             <tr>
@@ -1017,7 +946,7 @@
         <p style="margin-top: 16px; font-size: 0.85rem; color: rgba(245,240,232,0.4); line-height: 1.5; font-style: italic;">The Birdie → Eagle gap is intentional. Going for a par 5 in 2 and making eagle earns disproportionately more than laying up for birdie.</p>
       </div>
       <div>
-        <p style="font-family: 'Barlow Condensed'; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-bright); margin-bottom: 24px;">Handicap Multipliers (on declaration hit)</p>
+        <p style="font-family: 'Bebas Neue'; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-bright); margin-bottom: 24px;">Handicap Multipliers (on declaration hit)</p>
         <div class="multiplier-tiers">
           <div class="tier-card">
             <div>
@@ -1154,8 +1083,8 @@
   </div>
 
   <div style="margin-top: 48px; display: inline-block; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3); padding: 24px 48px;">
-    <p style="font-family: 'Barlow Condensed'; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: rgba(245,240,232,0.5); margin-bottom: 4px; text-transform: uppercase;">Maximum single-hole score</p>
-    <p style="font-family: 'Black Ops One'; font-size: 2.5rem; color: var(--gold);">Albatross (10) × 2.0× + HiO (44) = <span style="color: var(--gold-light)">64 pts</span></p>
+    <p style="font-family: 'Bebas Neue'; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: rgba(245,240,232,0.5); margin-bottom: 4px; text-transform: uppercase;">Maximum single-hole score</p>
+    <p style="font-family: 'Bebas Neue'; font-size: 2.5rem; color: var(--gold);">Albatross (10) × 2.0× + HiO (44) = <span style="color: var(--gold-light)">64 pts</span></p>
   </div>
 </section>
 
@@ -1320,5 +1249,7 @@
   }
 </script>
 
+<script>window.navConfig = { active: 'home', showUser: false };</script>
+<script src="components/nav.js"></script>
 </body>
 </html>

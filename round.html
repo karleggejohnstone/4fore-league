@@ -4,29 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>4FORE LEAGUE · Start a Round</title>
-<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
 <style>
+  /* Dark-world token aliases */
   :root {
-    --green: #1a4a2e;
+    --green: var(--color-green);
     --green-mid: #2d7a4f;
     --green-bright: #3ddc84;
-    --gold: #c9a84c;
+    --gold: var(--color-gold);
     --gold-light: #f0d080;
-    --cream: #f5f0e8;
+    --cream: var(--color-bg-cream);
     --dark: #0d1a12;
-    --red: #c0392b;
-    --white: #ffffff;
+    --red: var(--color-error);
+    --white: var(--color-white);
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     background: var(--dark);
     color: var(--cream);
-    font-family: 'Barlow', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     overflow-x: hidden;
     min-height: 100vh;
   }
@@ -41,52 +40,6 @@
     opacity: 0.4;
   }
 
-  /* NAV */
-  nav {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 100;
-    padding: 20px 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(to bottom, rgba(13,26,18,0.97), rgba(13,26,18,0.85));
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(201,168,76,0.1);
-  }
-
-  .nav-logo {
-    font-family: 'Black Ops One', cursive;
-    font-size: 1.8rem;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-    text-decoration: none;
-  }
-
-  .nav-logo span { color: var(--green-bright); }
-
-  .nav-links {
-    display: flex;
-    gap: 36px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--cream);
-    text-decoration: none;
-    opacity: 0.7;
-    transition: opacity 0.2s, color 0.2s;
-  }
-
-  .nav-links a:hover { opacity: 1; color: var(--gold); }
-  .nav-links a.active { opacity: 1; color: var(--gold); }
-
   /* PAGE */
   .page {
     padding: 120px 48px 80px;
@@ -95,9 +48,8 @@
   }
 
   .page-eyebrow {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.8rem;
-    font-weight: 700;
     letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--green-bright);
@@ -105,7 +57,7 @@
   }
 
   .page-title {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(2.5rem, 6vw, 4.5rem);
     color: var(--gold);
     line-height: 1;
@@ -151,7 +103,7 @@
     border: none;
     border-bottom: 1px solid rgba(201,168,76,0.15);
     color: var(--cream);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.15rem;
     font-weight: 700;
     padding: 16px 20px;
@@ -194,9 +146,8 @@
   }
 
   .method-tab {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.72rem;
-    font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: rgba(245,240,232,0.35);
@@ -246,7 +197,7 @@
     background: rgba(13,26,18,0.8);
     border: 1px solid rgba(201,168,76,0.25);
     color: var(--cream);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.3rem;
     font-weight: 700;
     padding: 12px 16px;
@@ -299,9 +250,8 @@
   }
 
   .result-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.6rem;
-    font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(245,240,232,0.28);
@@ -310,7 +260,7 @@
   }
 
   .result-value {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.25rem;
     line-height: 1;
     color: rgba(245,240,232,0.15);
@@ -322,7 +272,7 @@
   .result-value.active-hs   { color: var(--cream); }
 
   .result-sub {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.65rem;
     color: rgba(245,240,232,0.3);
     line-height: 1;
@@ -334,9 +284,8 @@
     background: transparent;
     border: 1px dashed rgba(201,168,76,0.25);
     color: var(--gold);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.9rem;
-    font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     padding: 15px;
@@ -371,8 +320,7 @@
   .btn-start {
     background: var(--gold);
     color: var(--dark);
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 900;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.1rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -395,7 +343,7 @@
   }
 
   .start-hint {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.85rem;
     color: rgba(245,240,232,0.35);
     letter-spacing: 0.05em;
@@ -417,17 +365,15 @@
     transform: translateX(-50%);
     background: var(--dark);
     padding: 0 16px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.7rem;
-    font-weight: 700;
     letter-spacing: 0.3em;
     color: rgba(201,168,76,0.3);
   }
 
   .join-eyebrow {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.8rem;
-    font-weight: 700;
     letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--green-bright);
@@ -435,7 +381,7 @@
   }
 
   .join-title {
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 2rem;
     color: var(--gold);
     margin-bottom: 8px;
@@ -459,7 +405,7 @@
     background: rgba(13,26,18,0.8);
     border: 1px solid rgba(201,168,76,0.25);
     color: var(--cream);
-    font-family: 'Black Ops One', cursive;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.8rem;
     letter-spacing: 0.25em;
     text-transform: uppercase;
@@ -471,7 +417,7 @@
   }
 
   .join-code-input::placeholder {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1rem;
     letter-spacing: 0.1em;
     color: rgba(245,240,232,0.2);
@@ -487,8 +433,7 @@
     background: transparent;
     border: 1px solid rgba(201,168,76,0.4);
     color: var(--gold);
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 900;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -510,7 +455,7 @@
 
   .join-error {
     margin-top: 10px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.85rem;
     color: var(--red);
     letter-spacing: 0.05em;
@@ -526,7 +471,7 @@
     background: rgba(13,26,18,0.97);
     border: 1px solid rgba(201,168,76,0.3);
     color: var(--cream);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.9rem;
     font-weight: 600;
     letter-spacing: 0.05em;
@@ -548,8 +493,6 @@
 
   /* RESPONSIVE */
   @media (max-width: 768px) {
-    nav { padding: 16px 24px; }
-    .nav-links { display: none; }
     .page { padding: 100px 20px 60px; }
     .method-tab { padding: 10px 12px; font-size: 0.68rem; }
   }

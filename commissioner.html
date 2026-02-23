@@ -4,543 +4,73 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Round Settings · 4FORE League</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
 <style>
-:root {
-  --cream:  #F5F0E8;
-  --cream2: #EDE8DF;
-  --green:  #1B3D2A;
-  --green2: #2A5C3F;
-  --green3: rgba(27,61,42,0.07);
-  --gold:   #C9A84C;
-  --gold2:  #E8C96A;
-  --text:   #1A1A1A;
-  --muted:  #6B6B6B;
-  --error:  #B91C1C;
-  --success:#166534;
-  --border: #D6CFC4;
-  --white:  #ffffff;
-  --sidebar-w: 240px;
-}
-
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  background: var(--cream);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.topbar {
-  background: var(--green);
-  padding: 0 32px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.topbar-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.6rem;
-  color: var(--gold);
-  text-decoration: none;
-  letter-spacing: 0.05em;
-}
-
-.topbar-logo span { color: #3ddc84; }
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.topbar-back {
-  color: rgba(245,240,232,0.7);
-  font-size: 0.85rem;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.15s;
-}
-
-.topbar-back:hover { color: var(--cream); }
-
-.topbar-round-name {
-  color: var(--gold);
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: 0.04em;
-}
-
-.btn-signout {
-  background: transparent;
-  border: 1px solid rgba(245,240,232,0.25);
-  color: rgba(245,240,232,0.6);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.8rem;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-signout:hover { border-color: rgba(245,240,232,0.5); color: var(--cream); }
-
-/* LAYOUT */
-.layout {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-}
-
-/* SIDEBAR */
-.sidebar {
-  width: var(--sidebar-w);
-  background: var(--white);
-  border-right: 1px solid var(--border);
-  padding: 32px 0;
-  flex-shrink: 0;
-  position: sticky;
-  top: 60px;
-  height: calc(100vh - 60px);
-  overflow-y: auto;
-}
-
-.sidebar-section { padding: 0 16px; margin-bottom: 8px; }
-
-.sidebar-label {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-  padding: 0 8px;
-  margin-bottom: 4px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--muted);
-  transition: all 0.15s;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-}
-
-.nav-item:hover { background: var(--green3); color: var(--green); }
-.nav-item.active { background: var(--green3); color: var(--green); font-weight: 600; }
-.nav-item svg { flex-shrink: 0; opacity: 0.6; }
-.nav-item.active svg, .nav-item:hover svg { opacity: 1; }
-
-.sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-
-/* MAIN */
-.main {
-  flex: 1;
-  overflow-y: auto;
-  padding: 40px 48px;
-  max-width: 900px;
-}
-
-.section { display: none; }
-.section.active { display: block; }
-
-.section-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2rem;
-  color: var(--green);
-  letter-spacing: 0.03em;
-  margin-bottom: 4px;
-}
-
-.section-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 32px; }
-
-/* CARDS */
-.card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 28px 32px;
-  margin-bottom: 20px;
-}
-
-.card-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--green);
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-/* FIELDS */
-.field { margin-bottom: 18px; }
-
-.field label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--green);
-  margin-bottom: 5px;
-}
-
-.field input, .field select, .field textarea {
-  width: 100%;
-  padding: 10px 13px;
-  background: var(--cream);
-  border: 1.5px solid var(--border);
-  border-radius: 4px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.92rem;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.field input:focus, .field select:focus, .field textarea:focus {
-  border-color: var(--green);
-  background: white;
-}
-
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.field-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
-
-/* TOGGLE ROW */
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.toggle-row:last-child { border-bottom: none; }
-.toggle-row-label { font-size: 0.9rem; font-weight: 500; color: var(--text); }
-.toggle-row-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
-
-.toggle {
-  position: relative;
-  width: 42px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.toggle input { opacity: 0; width: 0; height: 0; }
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  background: var(--border);
-  border-radius: 24px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.toggle input:checked + .toggle-track { background: var(--green); }
-
-.toggle-track::after {
-  content: '';
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 3px;
-  top: 3px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.2s;
-}
-
-.toggle input:checked + .toggle-track::after { transform: translateX(18px); }
-
-/* BUTTONS */
-.btn {
-  padding: 10px 24px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem;
-  letter-spacing: 0.08em;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn:hover { transform: translateY(-1px); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-.btn-green { background: var(--green); color: white; }
-.btn-green:hover:not(:disabled) { background: var(--green2); }
-
-.btn-gold { background: var(--gold); color: var(--green); }
-.btn-gold:hover:not(:disabled) { background: var(--gold2); }
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid var(--border);
-  color: var(--muted);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.88rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  padding: 9px 20px;
-}
-
-.btn-outline:hover { border-color: var(--green); color: var(--green); }
-
-.btn-danger {
-  background: transparent;
-  border: 1.5px solid #FCA5A5;
-  color: var(--error);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.88rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  padding: 9px 20px;
-}
-
-.btn-danger:hover { background: #FEF2F2; }
-
-.btn-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
-
-/* STATUS */
-.status-msg { font-size: 0.85rem; padding: 8px 0; min-height: 24px; }
-.status-ok  { color: var(--success); }
-.status-err { color: var(--error); }
-
-/* PLAYER ROWS */
-.player-row {
-  display: grid;
-  grid-template-columns: 1fr 100px 80px 80px auto;
-  gap: 10px;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.player-row:last-child { border-bottom: none; }
-
-.player-row input {
-  padding: 7px 10px;
-  background: var(--cream);
-  border: 1.5px solid var(--border);
-  border-radius: 4px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.88rem;
-  color: var(--text);
-  outline: none;
-  width: 100%;
-}
-
-.player-row input:focus { border-color: var(--green); background: white; }
-
-.player-row-label {
-  font-size: 0.72rem;
-  color: var(--muted);
-  margin-bottom: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.player-badge-claimed {
-  font-size: 0.7rem;
-  background: #DCFCE7;
-  color: #166534;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-weight: 600;
-}
-
-.player-badge-unclaimed {
-  font-size: 0.7rem;
-  background: #F3F4F6;
-  color: #6B7280;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-weight: 600;
-}
-
-/* DECL LIMITS */
-.decl-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.decl-field {
-  background: var(--cream);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 12px 14px;
-}
-
-.decl-field-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--green);
-  margin-bottom: 8px;
-}
-
-.decl-field input {
-  width: 60px;
-  padding: 6px 8px;
-  background: white;
-  border: 1.5px solid var(--border);
-  border-radius: 4px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.9rem;
-  color: var(--text);
-  outline: none;
-}
-
-.decl-field input:focus { border-color: var(--green); }
-
-/* CORRECTIONS TABLE */
-.corrections-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.corrections-table th {
-  text-align: left;
-  padding: 8px 10px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  border-bottom: 2px solid var(--border);
-}
-
-.corrections-table td {
-  padding: 10px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-}
-
-.corrections-table td input {
-  padding: 5px 8px;
-  background: var(--cream);
-  border: 1.5px solid var(--border);
-  border-radius: 4px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.85rem;
-  color: var(--text);
-  outline: none;
-  width: 60px;
-}
-
-.corrections-table td input:focus { border-color: var(--green); background: white; }
-
-.corrections-table td input.note-input { width: 200px; }
-
-/* PLAYER SEARCH */
-.player-search-wrap { position: relative; }
-
-.player-search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1.5px solid var(--border);
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  z-index: 20;
-  max-height: 220px;
-  overflow-y: auto;
-  display: none;
-}
-
-.player-search-results.open { display: block; }
-
-.player-search-result {
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: background 0.1s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.player-search-result:hover { background: var(--green3); }
-.player-search-result-name { font-size: 0.9rem; font-weight: 500; }
-.player-search-result-meta { font-size: 0.78rem; color: var(--muted); }
-.player-guest-btn {
-  padding: 10px 14px;
-  font-size: 0.82rem;
-  color: var(--gold);
-  font-weight: 500;
-  cursor: pointer;
-  border-top: 1px dashed var(--border);
-}
-.player-guest-btn:hover { background: rgba(201,168,76,0.08); }
-
-/* DANGER ZONE */
-.danger-zone {
-  border: 1.5px solid #FCA5A5;
-  border-radius: 8px;
-  padding: 24px 28px;
-  margin-bottom: 20px;
-}
-
-.danger-zone-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--error);
-  margin-bottom: 16px;
-}
-
-.danger-action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #FEE2E2;
-}
-
-.danger-action:last-child { border-bottom: none; }
-.danger-action-label { font-size: 0.9rem; font-weight: 500; }
-.danger-action-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
-
-/* RESPONSIVE */
-@media (max-width: 700px) {
-  .sidebar { display: none; }
-  .main { padding: 24px 20px; }
-  .field-row { grid-template-columns: 1fr; }
-  .player-row { grid-template-columns: 1fr 1fr; }
-  .player-row > *:nth-child(n+4) { grid-column: span 1; }
+/* ── Custom topbar for commissioner (back link + round name) ── */
+.topbar-back { color:rgba(245,240,232,0.7); font-size:0.85rem; text-decoration:none; display:flex; align-items:center; gap:6px; transition:color 0.15s; }
+.topbar-back:hover { color:var(--color-bg-cream); }
+.topbar-round-name { color:var(--color-gold); font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:0.04em; }
+
+/* ── Player row grid ── */
+.player-row { display:grid; grid-template-columns:1fr 100px 80px 80px auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--color-border); }
+.player-row:last-child { border-bottom:none; }
+.player-row input { padding:7px 10px; background:var(--color-bg-cream); border:1.5px solid var(--color-border); border-radius:4px; font-family:'DM Sans',sans-serif; font-size:0.88rem; color:var(--color-text); outline:none; width:100%; }
+.player-row input:focus { border-color:var(--color-green); background:white; }
+.player-row-label { font-size:0.72rem; color:var(--color-muted); margin-bottom:3px; text-transform:uppercase; letter-spacing:0.06em; }
+.player-badge-claimed { font-size:0.7rem; background:#DCFCE7; color:#166534; padding:2px 6px; border-radius:3px; font-weight:600; }
+.player-badge-unclaimed { font-size:0.7rem; background:#F3F4F6; color:#6B7280; padding:2px 6px; border-radius:3px; font-weight:600; }
+
+/* ── Declaration field grid ── */
+.decl-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px; margin-bottom:8px; }
+.decl-field { background:var(--color-bg-cream); border:1px solid var(--color-border); border-radius:6px; padding:12px 14px; }
+.decl-field-label { font-size:0.72rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-green); margin-bottom:8px; }
+.decl-field input { width:60px; padding:6px 8px; background:white; border:1.5px solid var(--color-border); border-radius:4px; font-family:'DM Sans',sans-serif; font-size:0.9rem; color:var(--color-text); outline:none; }
+.decl-field input:focus { border-color:var(--color-green); }
+
+/* ── Corrections table ── */
+.corrections-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+.corrections-table th { text-align:left; padding:8px 10px; font-size:0.72rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-muted); border-bottom:2px solid var(--color-border); }
+.corrections-table td { padding:10px; border-bottom:1px solid var(--color-border); vertical-align:top; }
+.corrections-table td input { padding:5px 8px; background:var(--color-bg-cream); border:1.5px solid var(--color-border); border-radius:4px; font-family:'DM Sans',sans-serif; font-size:0.85rem; color:var(--color-text); outline:none; width:60px; }
+.corrections-table td input:focus { border-color:var(--color-green); background:white; }
+.corrections-table td input.note-input { width:200px; }
+
+/* ── Player search dropdown ── */
+.player-search-wrap { position:relative; }
+.player-search-results { position:absolute; top:100%; left:0; right:0; background:white; border:1.5px solid var(--color-border); border-top:none; border-radius:0 0 4px 4px; z-index:20; max-height:220px; overflow-y:auto; display:none; }
+.player-search-results.open { display:block; }
+.player-search-result { padding:10px 14px; cursor:pointer; transition:background 0.1s; display:flex; justify-content:space-between; align-items:center; }
+.player-search-result:hover { background:var(--color-green-tint); }
+.player-search-result-name { font-size:0.9rem; font-weight:500; }
+.player-search-result-meta { font-size:0.78rem; color:var(--color-muted); }
+.player-guest-btn { padding:10px 14px; font-size:0.82rem; color:var(--color-gold); font-weight:500; cursor:pointer; border-top:1px dashed var(--color-border); }
+.player-guest-btn:hover { background:rgba(201,168,76,0.08); }
+
+/* ── Danger zone ── */
+.danger-zone { border:1.5px solid #FCA5A5; border-radius:8px; padding:24px 28px; margin-bottom:20px; }
+.danger-zone-title { font-size:0.8rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--color-error); margin-bottom:16px; }
+.danger-action { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #FEE2E2; }
+.danger-action:last-child { border-bottom:none; }
+.danger-action-label { font-size:0.9rem; font-weight:500; }
+.danger-action-sub { font-size:0.78rem; color:var(--color-muted); margin-top:2px; }
+
+/* ── Toggle track ── */
+.toggle-track { position:absolute; inset:0; background:var(--color-border); border-radius:24px; cursor:pointer; transition:background 0.2s; }
+.toggle input:checked + .toggle-track { background:var(--color-green); }
+.toggle-track::after { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:white; border-radius:50%; transition:transform 0.2s; }
+.toggle input:checked + .toggle-track::after { transform:translateX(18px); }
+
+/* ── Status ── */
+.status-msg { font-size:0.85rem; padding:8px 0; min-height:24px; }
+.status-ok  { color:var(--color-success); }
+.status-err { color:var(--color-error); }
+
+@media (max-width:700px) {
+  .player-row { grid-template-columns:1fr 1fr; }
+  .player-row > *:nth-child(n+4) { grid-column:span 1; }
 }
 </style>
 </head>
@@ -649,7 +179,7 @@ body {
 
       <div class="card">
         <div class="card-title">Join Code</div>
-        <p style="font-size:1.4rem;font-family:'Bebas Neue',sans-serif;color:var(--green);letter-spacing:0.15em;" id="joinCodeDisplay">—</p>
+        <p style="font-size:1.4rem;font-family:'Bebas Neue',sans-serif;color:var(--color-green);letter-spacing:0.15em;" id="joinCodeDisplay">—</p>
         <p class="field-hint">Share this code with players to join on round.html</p>
       </div>
     </div>
@@ -747,7 +277,7 @@ body {
 
       <div class="card">
         <div class="card-title">Correction Log</div>
-        <div id="correctionLog" style="color:var(--muted);font-size:0.88rem;">Loading…</div>
+        <div id="correctionLog" style="color:var(--color-muted);font-size:0.88rem;">Loading…</div>
       </div>
     </div>
 
@@ -786,7 +316,7 @@ body {
 
       <div class="card">
         <div class="card-title">Transfer Commissioner</div>
-        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:16px;">Assign a different registered user as commissioner for this round. This cannot be undone.</p>
+        <p style="font-size:0.88rem;color:var(--color-muted);margin-bottom:16px;">Assign a different registered user as commissioner for this round. This cannot be undone.</p>
         <div class="field">
           <label for="transferSearch">New Commissioner</label>
           <div class="player-search-wrap">
@@ -941,12 +471,12 @@ window.saveRoundInfo = async function() {
 function populatePlayerRows() {
   const wrap = document.getElementById('playerRowsWrap');
   if (players.length === 0) {
-    wrap.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;">No players yet.</p>';
+    wrap.innerHTML = '<p style="color:var(--color-muted);font-size:0.88rem;">No players yet.</p>';
     return;
   }
 
   // Header
-  wrap.innerHTML = `<div class="player-row" style="border-bottom:2px solid var(--border);padding-bottom:6px;">
+  wrap.innerHTML = `<div class="player-row" style="border-bottom:2px solid var(--color-border);padding-bottom:6px;">
     <div class="player-row-label">Name</div>
     <div class="player-row-label">Handicap</div>
     <div class="player-row-label">Multiplier</div>
@@ -1058,7 +588,7 @@ async function doPlayerSearch(q, resultsEl, inputEl, forTransfer) {
     html += `<div class="player-guest-btn" onmousedown="addGuestPlayerToRound('${escAttr(q)}')">+ Add "${escHtml(q)}" as guest</div>`;
   }
 
-  resultsEl.innerHTML = html || '<div style="padding:10px 14px;font-size:0.85rem;color:var(--muted);">No results found.</div>';
+  resultsEl.innerHTML = html || '<div style="padding:10px 14px;font-size:0.85rem;color:var(--color-muted);">No results found.</div>';
   resultsEl.classList.add('open');
 }
 
@@ -1178,7 +708,7 @@ function populateMomentToggles() {
     const enabled = cfg[m.key] !== false;
     return `<div class="toggle-row">
       <div>
-        <div class="toggle-row-label">${m.label} <span style="color:var(--gold);font-weight:600;">+${m.pts} pts</span></div>
+        <div class="toggle-row-label">${m.label} <span style="color:var(--color-gold);font-weight:600;">+${m.pts} pts</span></div>
       </div>
       <label class="toggle">
         <input type="checkbox" id="moment-${m.key}" ${enabled ? 'checked' : ''}>
@@ -1443,5 +973,6 @@ function escAttr(str) {
   return String(str ?? '').replace(/'/g,"\\'").replace(/"/g,'&quot;');
 }
 </script>
+<script>window.navConfig = { noNav: true };</script>
 </body>
 </html>
