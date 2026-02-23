@@ -12,6 +12,41 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
 
+  /* PAGE SUB-NAV */
+  .page-subnav {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0; right: 0;
+    z-index: 90;
+    background: rgba(27,61,42,0.97);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    border-bottom: 1px solid rgba(201,168,76,0.25);
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .page-subnav.visible { transform: translateY(0); }
+
+  .page-subnav a {
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    text-decoration: none;
+    padding: 10px 20px;
+    transition: color 0.15s;
+  }
+
+  .page-subnav a:hover { color: var(--color-gold); }
+
+  @media (max-width: 600px) {
+    .page-subnav { display: none; }
+  }
+
   body {
     background: var(--color-bg);
     color: var(--color-text);
@@ -694,6 +729,205 @@
     flex-shrink: 0;
   }
 
+  /* PRICING */
+  #pricing {
+    padding: 120px 48px;
+    background: var(--color-bg-cream);
+    text-align: center;
+  }
+
+  #pricing .section-label { display: block; margin-bottom: 12px; }
+
+  #pricing .section-title {
+    font-size: clamp(3rem, 6vw, 5rem);
+    margin-bottom: 16px;
+  }
+
+  .pricing-sub {
+    font-size: 1.05rem;
+    color: var(--color-muted);
+    margin-bottom: 64px;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .pricing-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 36px 32px 32px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .pricing-card:hover {
+    box-shadow: 0 8px 32px rgba(27,61,42,0.1);
+    transform: translateY(-2px);
+  }
+
+  .pricing-card.popular {
+    border: 2px solid var(--color-gold);
+    box-shadow: 0 4px 24px rgba(201,168,76,0.18);
+    transform: translateY(-6px);
+  }
+
+  .pricing-card.popular:hover {
+    box-shadow: 0 12px 40px rgba(201,168,76,0.25);
+    transform: translateY(-8px);
+  }
+
+  .popular-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-gold);
+    color: var(--color-green);
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 4px 16px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .pricing-tier {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--color-green);
+    margin-bottom: 20px;
+  }
+
+  .pricing-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .price-amount {
+    font-family: var(--font-display);
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--color-green);
+  }
+
+  .price-period {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+
+  .pricing-desc {
+    font-size: 0.9rem;
+    color: var(--color-muted);
+    line-height: 1.5;
+    margin-bottom: 28px;
+    min-height: 48px;
+  }
+
+  .pricing-features {
+    list-style: none;
+    margin-bottom: 32px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pricing-features li {
+    font-size: 0.9rem;
+    color: var(--color-text);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.4;
+  }
+
+  .pricing-features li::before {
+    content: '✓';
+    font-family: var(--font-display);
+    color: var(--color-green);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .pricing-cta {
+    display: block;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 14px 24px;
+    border-radius: var(--radius-md);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .pricing-cta.cta-outline {
+    background: transparent;
+    color: var(--color-green);
+    border: 1.5px solid var(--color-green);
+  }
+
+  .pricing-cta.cta-outline:hover {
+    background: var(--color-green);
+    color: #ffffff;
+  }
+
+  .pricing-cta.cta-solid {
+    background: var(--color-green);
+    color: #ffffff;
+    border: 1.5px solid var(--color-green);
+  }
+
+  .pricing-cta.cta-solid:hover {
+    background: var(--color-green-hover);
+    border-color: var(--color-green-hover);
+  }
+
+  .pricing-cta.cta-gold {
+    background: var(--color-gold);
+    color: var(--color-green);
+    border: 1.5px solid var(--color-gold);
+  }
+
+  .pricing-cta.cta-gold:hover {
+    background: var(--color-gold-hover);
+    border-color: var(--color-gold-hover);
+  }
+
+  .pricing-fine {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 768px) {
+    #pricing { padding-left: 24px; padding-right: 24px; }
+    .pricing-grid {
+      grid-template-columns: 1fr;
+      max-width: 420px;
+    }
+    .pricing-card.popular { transform: none; }
+    .pricing-card.popular:hover { transform: translateY(-2px); }
+  }
+
   /* FOOTER */
   footer {
     background: var(--color-green);
@@ -739,6 +973,15 @@
 <!-- NAV -->
 <div id="nav-root"></div>
 
+<!-- PAGE SUB-NAV (marketing anchors) -->
+<div class="page-subnav" id="pageSubnav">
+  <a href="#how-it-works">How It Works</a>
+  <a href="#scoring">Scoring</a>
+  <a href="#declarations">Declarations</a>
+  <a href="#moments">Moments</a>
+  <a href="#pricing">Pricing</a>
+</div>
+
 <!-- HERO -->
 <section class="hero">
   <div class="hero-bg" id="heroBg"></div>
@@ -748,8 +991,9 @@
     <p class="hero-subtitle">League · Never Lay Up</p>
     <p class="hero-tagline">Built for how golfers actually play with friends. <strong>The bold shot should always be the right play.</strong> Four independent, stackable scoring layers. One unforgettable round.</p>
     <div class="hero-cta">
-      <a href="#how-it-works" class="btn-hero-primary">How It Works</a>
-      <a href="#quick-ref" class="btn-hero-secondary">Quick Reference</a>
+      <a href="signup.html" class="btn-hero-primary">Get Started Free</a>
+      <a href="#pricing" class="btn-hero-secondary">View Pricing</a>
+      <a href="#how-it-works" class="btn-hero-secondary">How It Works</a>
     </div>
   </div>
 
@@ -1140,6 +1384,76 @@
   </div>
 </section>
 
+<!-- PRICING -->
+<section id="pricing">
+  <span class="section-label">Plans</span>
+  <h2 class="section-title">Choose Your Game</h2>
+  <p class="pricing-sub">Start free. Upgrade when you're ready.</p>
+
+  <div class="pricing-grid">
+
+    <!-- FREE -->
+    <div class="pricing-card">
+      <div class="pricing-tier">Free</div>
+      <div class="pricing-price">
+        <span class="price-amount">$0</span>
+        <span class="price-period">forever</span>
+      </div>
+      <p class="pricing-desc">Jump in a round today. No card, no commitment.</p>
+      <ul class="pricing-features">
+        <li>Join any round with a code</li>
+        <li>Live scoring &amp; leaderboard</li>
+        <li>All 4 scoring layers</li>
+        <li>Declarations &amp; moment bonuses</li>
+        <li>Round recap after play</li>
+      </ul>
+      <a href="signup.html" class="pricing-cta cta-outline">Get Started</a>
+    </div>
+
+    <!-- PLAYER PRO -->
+    <div class="pricing-card popular">
+      <div class="popular-badge">Most Popular</div>
+      <div class="pricing-tier">Player Pro</div>
+      <div class="pricing-price">
+        <span class="price-amount">$0.99</span>
+        <span class="price-period">/mo</span>
+      </div>
+      <p class="pricing-desc">Track your game over time. Know exactly where you're winning.</p>
+      <ul class="pricing-features">
+        <li>Everything in Free</li>
+        <li>Full round history</li>
+        <li>Personal stat breakdowns</li>
+        <li>Handicap tracking over time</li>
+        <li>Declaration hit rate &amp; trends</li>
+        <li>Season leaderboard access</li>
+      </ul>
+      <a href="signup.html" class="pricing-cta cta-gold">Start Free Trial</a>
+      <p class="pricing-fine">30 day free trial · Card required · Cancel anytime</p>
+    </div>
+
+    <!-- COMMISSIONER -->
+    <div class="pricing-card">
+      <div class="pricing-tier">Commissioner</div>
+      <div class="pricing-price">
+        <span class="price-amount">$4.99</span>
+        <span class="price-period">/mo</span>
+      </div>
+      <p class="pricing-desc">Run the league. Create rounds, manage players, own the experience.</p>
+      <ul class="pricing-features">
+        <li>Everything in Player Pro</li>
+        <li>Create &amp; manage rounds</li>
+        <li>Commissioner dashboard</li>
+        <li>Player management &amp; handicaps</li>
+        <li>Round history for all players</li>
+        <li>League analytics &amp; exports</li>
+      </ul>
+      <a href="signup.html" class="pricing-cta cta-solid">Start Free Trial</a>
+      <p class="pricing-fine">30 day free trial · Card required · Cancel anytime</p>
+    </div>
+
+  </div>
+</section>
+
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">4FORE LEAGUE</div>
@@ -1161,6 +1475,17 @@
     `;
     heroBg.appendChild(line);
   }
+
+  // Show sub-nav after scrolling past hero
+  const subnav = document.getElementById('pageSubnav');
+  const heroEl = document.querySelector('.hero');
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      subnav.classList.toggle('visible', !entry.isIntersecting);
+    },
+    { threshold: 0.1 }
+  );
+  observer.observe(heroEl);
 </script>
 
 <script>window.navConfig = { active: 'home', showUser: false };</script>
