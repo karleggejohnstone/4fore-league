@@ -9,108 +9,77 @@
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
 <style>
-  /* Dark-world token aliases */
-  :root {
-    --dark:         #0d1a12;
-    --green:        var(--color-green);
-    --green-mid:    #2d7a4f;
-    --green-bright: #3ddc84;
-    --gold:         var(--color-gold);
-    --gold-light:   #f0d080;
-    --cream:        var(--color-bg-cream);
-    --red:          var(--color-error);
-    --white:        #ffffff;
-  }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: var(--dark);
-    color: var(--cream);
+    background: var(--color-bg);
+    color: var(--color-text);
     font-family: var(--font-body);
     overflow-x: hidden;
     min-height: 100vh;
   }
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0.4;
-  }
-
-  /* NAV */
+  /* NAV — dark green, fixed, holds round code + End Round */
   nav {
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 200;
-    padding: 16px 48px;
+    padding: 14px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(13,26,18,0.98);
-    border-bottom: 1px solid rgba(201,168,76,0.12);
-    backdrop-filter: blur(8px);
+    background: var(--color-green);
+    border-bottom: 2px solid var(--color-gold);
   }
 
   .nav-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
-    color: var(--gold);
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: #ffffff;
     letter-spacing: 0.05em;
     text-decoration: none;
   }
 
-  .nav-logo span { color: var(--green-bright); }
+  .nav-logo span { color: var(--color-gold); }
 
   .nav-right {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
   }
 
   .nav-round-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 0.72rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.4);
+    color: rgba(255,255,255,0.45);
   }
 
   .btn-end-round {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 0.72rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(192,57,43,0.6);
+    color: rgba(192,57,43,0.75);
     background: transparent;
-    border: 1px solid rgba(192,57,43,0.25);
+    border: 1px solid rgba(192,57,43,0.3);
     padding: 7px 16px;
     cursor: pointer;
-    transition: all 0.2s;
-    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s;
   }
 
-  .btn-end-round:hover {
-    color: var(--red);
-    border-color: rgba(192,57,43,0.6);
-    background: rgba(192,57,43,0.08);
-  }
+  .btn-end-round:hover { color: var(--color-error); border-color: rgba(192,57,43,0.7); background: rgba(192,57,43,0.08); }
 
   /* LEADERBOARD */
   .leaderboard {
     position: sticky;
-    top: 57px;
+    top: 53px;
     z-index: 90;
-    background: rgba(13,26,18,0.97);
-    border-bottom: 2px solid rgba(201,168,76,0.15);
-    backdrop-filter: blur(8px);
+    background: var(--color-bg-cream);
+    border-bottom: 1px solid var(--color-border);
     padding: 10px 24px;
     display: flex;
     gap: 8px;
@@ -118,43 +87,40 @@
   }
 
   .leaderboard::-webkit-scrollbar { height: 3px; }
-  .leaderboard::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); }
+  .leaderboard::-webkit-scrollbar-thumb { background: var(--color-gold); border-radius: 2px; }
 
   .lb-card {
-    background: rgba(45,122,79,0.08);
-    border: 1px solid rgba(201,168,76,0.15);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     padding: 8px 14px;
     min-width: 110px;
     flex-shrink: 0;
-    position: relative;
-    transition: border-color 0.3s;
+    transition: border-color 0.2s;
   }
 
-  .lb-card.rank-1 { border-color: var(--gold); background: rgba(201,168,76,0.08); }
-  .lb-card.rank-2 { border-color: rgba(180,180,180,0.4); }
-  .lb-card.rank-3 { border-color: rgba(61,220,132,0.3); }
+  .lb-card.rank-1 { border-color: var(--color-gold); background: rgba(201,168,76,0.06); }
+  .lb-card.rank-2 { border-color: #C0C0C0; }
+  .lb-card.rank-3 { border-color: var(--color-green); }
 
   .lb-rank {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.6rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.3);
+    color: var(--color-muted);
     line-height: 1;
     margin-bottom: 3px;
   }
 
-  .lb-card.rank-1 .lb-rank { color: var(--gold); }
-  .lb-card.rank-2 .lb-rank { color: rgba(200,200,200,0.6); }
-  .lb-card.rank-3 .lb-rank { color: var(--green-bright); }
+  .lb-card.rank-1 .lb-rank { color: var(--color-gold); }
+  .lb-card.rank-2 .lb-rank { color: #A0A0A0; }
+  .lb-card.rank-3 .lb-rank { color: var(--color-green); }
 
   .lb-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--cream);
+    color: var(--color-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -162,18 +128,18 @@
   }
 
   .lb-score {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.2rem;
-    color: var(--gold);
+    color: var(--color-gold);
     line-height: 1;
     margin-top: 2px;
   }
 
-  .lb-card.rank-1 .lb-score { color: var(--gold-light); font-size: 1.35rem; }
+  .lb-card.rank-1 .lb-score { font-size: 1.35rem; }
 
   /* MAIN CONTENT */
   .page {
-    padding-top: 130px; /* nav + leaderboard */
+    padding-top: 130px;
     padding-bottom: 80px;
     max-width: 720px;
     margin: 0 auto;
@@ -191,44 +157,38 @@
   }
 
   .hole-nav-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.8rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.4);
+    color: var(--color-muted);
     white-space: nowrap;
   }
 
   .btn-nav {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--cream);
-    background: rgba(45,122,79,0.1);
-    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--color-green);
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
     padding: 10px 24px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.15s, border-color 0.15s;
     white-space: nowrap;
   }
 
-  .btn-nav:hover:not(:disabled) {
-    background: rgba(45,122,79,0.25);
-    border-color: rgba(201,168,76,0.45);
-  }
-
-  .btn-nav:disabled {
-    opacity: 0.25;
-    cursor: not-allowed;
-  }
+  .btn-nav:hover:not(:disabled) { background: var(--color-green-tint); border-color: var(--color-green); }
+  .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
 
   /* HOLE PANEL */
   .hole-panel {
-    background: rgba(45,122,79,0.06);
-    border: 1px solid rgba(201,168,76,0.15);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
   }
 
   .hole-header {
@@ -236,56 +196,48 @@
     align-items: center;
     justify-content: space-between;
     padding: 18px 24px;
-    border-bottom: 1px solid rgba(201,168,76,0.12);
+    background: var(--color-bg-cream);
+    border-bottom: 1px solid var(--color-border);
     flex-wrap: wrap;
     gap: 12px;
   }
 
   .hole-number {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 2rem;
-    color: var(--gold);
+    color: var(--color-green);
     line-height: 1;
   }
 
   .par-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.7rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.35);
+    color: var(--color-muted);
     margin-bottom: 6px;
   }
 
-  .par-selector {
-    display: flex;
-    gap: 2px;
-  }
+  .par-selector { display: flex; gap: 2px; }
 
   .par-btn {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1rem;
-    color: rgba(245,240,232,0.35);
-    background: rgba(13,26,18,0.7);
-    border: 1px solid rgba(201,168,76,0.15);
+    color: var(--color-muted);
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
     padding: 8px 18px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.12s;
   }
 
-  .par-btn:hover { color: rgba(245,240,232,0.7); border-color: rgba(201,168,76,0.35); }
-
-  .par-btn.active {
-    background: var(--gold);
-    color: var(--dark);
-    border-color: var(--gold);
-  }
+  .par-btn:hover { color: var(--color-text); border-color: var(--color-gold); }
+  .par-btn.active { background: var(--color-gold); color: var(--color-green); border-color: var(--color-gold); }
 
   /* PLAYER ROWS */
   .player-scoring-row {
     padding: 20px 24px;
-    border-bottom: 1px solid rgba(201,168,76,0.08);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .player-scoring-row:last-child { border-bottom: none; }
@@ -299,32 +251,29 @@
   }
 
   .player-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.75rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.5);
+    color: var(--color-green);
   }
 
   .player-mult-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: rgba(245,240,232,0.25);
+    color: var(--color-muted);
     margin-left: 8px;
   }
 
   .player-hole-score {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.5rem;
-    color: rgba(245,240,232,0.15);
+    color: var(--color-border);
     line-height: 1;
     transition: color 0.2s;
   }
 
-  .player-hole-score.has-score { color: var(--gold); }
+  .player-hole-score.has-score { color: var(--color-gold); }
 
   .inputs-row {
     display: flex;
@@ -333,84 +282,76 @@
     flex-wrap: wrap;
   }
 
-  .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+  .input-group { display: flex; flex-direction: column; gap: 5px; }
 
   .input-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.62rem;
-    font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.28);
+    color: var(--color-muted);
   }
 
   .strokes-input {
-    background: rgba(13,26,18,0.85);
-    border: 1px solid rgba(201,168,76,0.25);
-    color: var(--cream);
-    font-family: 'Bebas Neue', sans-serif;
+    background: var(--color-bg-cream);
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text);
+    font-family: var(--font-display);
     font-size: 1.6rem;
     padding: 10px 14px;
     width: 80px;
     outline: none;
     text-align: center;
-    transition: border-color 0.2s, background 0.2s;
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s;
     -moz-appearance: textfield;
   }
 
   .strokes-input::-webkit-outer-spin-button,
   .strokes-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
-  .strokes-input:focus {
-    border-color: rgba(201,168,76,0.6);
-    background: rgba(45,122,79,0.15);
-  }
+  .strokes-input:focus { border-color: var(--color-green); background: var(--color-bg); }
 
   .declaration-select {
-    background: rgba(13,26,18,0.85);
-    border: 1px solid rgba(201,168,76,0.2);
-    color: var(--cream);
-    font-family: 'Bebas Neue', sans-serif;
+    background: var(--color-bg-cream);
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text);
+    font-family: var(--font-display);
     font-size: 0.9rem;
-    font-weight: 600;
     padding: 10px 12px;
     outline: none;
     cursor: pointer;
-    transition: border-color 0.2s;
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s;
     min-width: 180px;
   }
 
-  .declaration-select:focus { border-color: rgba(201,168,76,0.5); }
+  .declaration-select:focus { border-color: var(--color-green); background: var(--color-bg); }
 
   /* HIT / MISS TOGGLE */
-  .hit-miss-wrap {
-    display: flex;
-    gap: 2px;
-  }
+  .hit-miss-wrap { display: flex; gap: 2px; }
 
   .hit-btn, .miss-btn {
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 900;
+    font-family: var(--font-display);
     font-size: 0.8rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     padding: 10px 16px;
-    border: 1px solid rgba(201,168,76,0.2);
-    background: rgba(13,26,18,0.7);
-    color: rgba(245,240,232,0.35);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-muted);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.12s;
   }
 
-  .hit-btn:hover  { background: rgba(45,122,79,0.2); color: var(--green-bright); }
-  .miss-btn:hover { background: rgba(192,57,43,0.15); color: var(--red); }
+  .hit-btn:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+  .miss-btn:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 
-  .hit-btn.active  { background: var(--green-mid); color: var(--cream); border-color: var(--green-mid); }
-  .miss-btn.active { background: var(--red); color: var(--white); border-color: var(--red); }
+  .hit-btn:hover  { background: var(--color-green-tint); color: var(--color-green); border-color: var(--color-green); }
+  .miss-btn:hover { background: rgba(192,57,43,0.07); color: var(--color-error); border-color: rgba(192,57,43,0.4); }
+
+  .hit-btn.active  { background: var(--color-green); color: #ffffff; border-color: var(--color-green); }
+  .miss-btn.active { background: var(--color-error); color: #ffffff; border-color: var(--color-error); }
 
   /* MOMENT BUTTONS */
   .moments-row {
@@ -421,38 +362,26 @@
   }
 
   .moment-btn {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.7rem;
-    font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    border: 1px solid rgba(61,220,132,0.2);
-    color: rgba(61,220,132,0.4);
-    background: transparent;
+    border: 1.5px solid var(--color-border);
+    color: var(--color-muted);
+    background: var(--color-bg);
     padding: 6px 12px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.12s;
     white-space: nowrap;
   }
 
-  .moment-btn:hover {
-    border-color: rgba(61,220,132,0.5);
-    color: rgba(61,220,132,0.8);
-    background: rgba(61,220,132,0.06);
-  }
+  .moment-btn:hover { border-color: var(--color-green); color: var(--color-green); background: var(--color-green-tint); }
+  .moment-btn.active { background: var(--color-green-tint); border-color: var(--color-green); color: var(--color-green); }
 
-  .moment-btn.active {
-    background: rgba(61,220,132,0.12);
-    border-color: var(--green-bright);
-    color: var(--green-bright);
-  }
-
-  .moment-btn[data-moment="hio"] {
-    border-color: rgba(201,168,76,0.3);
-    color: rgba(201,168,76,0.5);
-  }
-  .moment-btn[data-moment="hio"]:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
-  .moment-btn[data-moment="hio"].active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.15); }
+  .moment-btn[data-moment="hio"] { border-color: rgba(201,168,76,0.4); color: var(--color-muted); }
+  .moment-btn[data-moment="hio"]:hover { border-color: var(--color-gold); color: var(--color-gold); background: rgba(201,168,76,0.08); }
+  .moment-btn[data-moment="hio"].active { border-color: var(--color-gold); color: var(--color-gold); background: rgba(201,168,76,0.12); }
 
   /* HOLE PROGRESS BAR */
   .hole-progress {
@@ -463,262 +392,179 @@
 
   .hole-pip {
     flex: 1;
-    height: 3px;
-    background: rgba(255,255,255,0.07);
+    height: 4px;
+    background: var(--color-border);
     border-radius: 2px;
     transition: background 0.2s;
     cursor: pointer;
   }
 
-  .hole-pip.current { background: var(--gold); }
-  .hole-pip.scored  { background: rgba(61,220,132,0.5); }
+  .hole-pip.current { background: var(--color-gold); }
+  .hole-pip.scored  { background: var(--color-green); }
 
   /* NO PLAYERS STATE */
-  .no-players {
-    text-align: center;
-    padding: 80px 24px;
-  }
+  .no-players { text-align: center; padding: 80px 24px; }
 
   .no-players h2 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 2rem;
-    color: var(--gold);
+    color: var(--color-green);
     margin-bottom: 16px;
   }
 
-  .no-players p {
-    color: rgba(245,240,232,0.5);
-    margin-bottom: 32px;
-  }
+  .no-players p { color: var(--color-muted); margin-bottom: 32px; }
 
   .btn-primary {
-    background: var(--gold);
-    color: var(--dark);
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 900;
+    background: var(--color-gold);
+    color: var(--color-green);
+    font-family: var(--font-display);
     font-size: 1rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     padding: 16px 40px;
     border: none;
+    border-radius: var(--radius-md);
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
-    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    transition: background 0.15s;
   }
+
+  .btn-primary:hover { background: var(--color-gold-hover); }
 
   /* VIEW TOGGLE */
-  .view-toggle {
-    display: flex;
-    gap: 2px;
-    margin-bottom: 20px;
-  }
+  .view-toggle { display: flex; gap: 2px; margin-bottom: 20px; }
 
   .toggle-btn {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     padding: 9px 20px;
-    border: 1px solid rgba(201,168,76,0.2);
-    background: transparent;
-    color: rgba(245,240,232,0.4);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-muted);
     cursor: pointer;
-    transition: all 0.15s;
+    border-radius: var(--radius-sm);
+    transition: all 0.12s;
   }
 
-  .toggle-btn.active {
-    background: rgba(201,168,76,0.12);
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-
-  .toggle-btn:hover:not(.active) {
-    color: rgba(245,240,232,0.75);
-    border-color: rgba(201,168,76,0.4);
-  }
+  .toggle-btn.active { background: var(--color-green); border-color: var(--color-green); color: #ffffff; }
+  .toggle-btn:hover:not(.active) { color: var(--color-text); border-color: var(--color-gold); }
 
   /* FULL SCORECARD TABLE */
-  .full-scorecard-wrap {
-    display: none;
-    overflow-x: auto;
-  }
-
+  .full-scorecard-wrap { display: none; overflow-x: auto; }
   .full-scorecard-wrap.visible { display: block; }
 
   .full-scorecard-table {
     width: 100%;
     border-collapse: collapse;
     min-width: 560px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
   }
 
   .full-scorecard-table thead th {
     font-size: 0.62rem;
-    font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--color-green);
     padding: 10px 12px;
-    background: rgba(13,26,18,0.95);
-    border-bottom: 2px solid rgba(201,168,76,0.25);
+    background: var(--color-bg-cream);
+    border-bottom: 2px solid var(--color-border);
     white-space: nowrap;
     text-align: left;
   }
 
   .full-scorecard-table thead th.player-col {
-    border-left: 1px solid rgba(201,168,76,0.12);
+    border-left: 1px solid var(--color-border);
     text-align: center;
   }
 
-  .full-scorecard-table tbody tr {
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .full-scorecard-table tbody tr:hover td { background: rgba(45,122,79,0.18); }
+  .full-scorecard-table tbody tr { cursor: pointer; transition: background 0.12s; }
+  .full-scorecard-table tbody tr:hover td { background: var(--color-green-tint); }
 
   .full-scorecard-table tbody tr.hole-current td {
-    background: rgba(201,168,76,0.08);
+    background: rgba(201,168,76,0.07);
     border-top: 1px solid rgba(201,168,76,0.3);
     border-bottom: 1px solid rgba(201,168,76,0.3);
   }
 
-  .full-scorecard-table tbody tr.hole-unplayed td { opacity: 0.35; }
+  .full-scorecard-table tbody tr.hole-unplayed td { opacity: 0.4; }
 
   .full-scorecard-table td {
     padding: 9px 12px;
     font-size: 0.88rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
     white-space: nowrap;
   }
 
   .full-scorecard-table td.player-col {
-    border-left: 1px solid rgba(201,168,76,0.08);
+    border-left: 1px solid var(--color-border);
     text-align: center;
   }
 
-  .sc-hole-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1rem;
-    color: var(--gold);
-  }
-
-  .sc-par { color: rgba(245,240,232,0.45); font-size: 0.8rem; }
-
-  .sc-pts {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1rem;
-    color: var(--gold);
-  }
-
-  .sc-score-detail {
-    font-size: 0.72rem;
-    color: rgba(245,240,232,0.4);
-    line-height: 1.3;
-  }
-
-  .sc-hit  { color: var(--green-bright); font-weight: 700; }
-  .sc-miss { color: var(--red); font-weight: 700; }
-  .sc-moments { font-size: 0.7rem; color: rgba(201,168,76,0.7); }
+  .sc-hole-num { font-size: 1rem; color: var(--color-gold); }
+  .sc-par { color: var(--color-muted); font-size: 0.8rem; }
+  .sc-pts { font-size: 1rem; color: var(--color-gold); }
+  .sc-score-detail { font-size: 0.72rem; color: var(--color-muted); line-height: 1.3; }
+  .sc-hit  { color: var(--color-success); font-weight: 700; }
+  .sc-miss { color: var(--color-error); font-weight: 700; }
+  .sc-moments { font-size: 0.7rem; color: var(--color-gold); }
 
   /* TOTALS ROW */
   .full-scorecard-table tfoot tr td {
-    background: rgba(13,26,18,0.9);
-    border-top: 2px solid rgba(201,168,76,0.3);
+    background: var(--color-bg-cream);
+    border-top: 2px solid var(--color-border);
     font-weight: 700;
   }
 
   .tfoot-label {
-    font-family: 'Bebas Neue', sans-serif;
     font-size: 0.65rem;
-    font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.35);
+    color: var(--color-muted);
     display: block;
     margin-bottom: 2px;
   }
 
-  .tfoot-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1rem;
-    color: var(--gold-light);
-    display: block;
-  }
-
-  .tfoot-total {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    color: var(--gold-light);
-  }
-
-  .tfoot-breakdown {
-    font-size: 0.7rem;
-    color: rgba(245,240,232,0.35);
-    line-height: 1.6;
-    margin-top: 3px;
-  }
+  .tfoot-val { font-size: 1rem; color: var(--color-gold); display: block; }
+  .tfoot-total { font-size: 1.4rem; color: var(--color-gold); }
+  .tfoot-breakdown { font-size: 0.7rem; color: var(--color-muted); line-height: 1.6; margin-top: 3px; }
 
   /* ROUND CODE BADGE */
   .round-code-badge {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 14px;
-    border: 1px solid rgba(201,168,76,0.3);
-    background: rgba(201,168,76,0.05);
+    padding: 5px 12px;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.08);
   }
 
   .round-code-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.65rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.4);
+    color: rgba(255,255,255,0.45);
     white-space: nowrap;
   }
 
   .round-code-value {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.1rem;
-    color: var(--gold);
+    color: var(--color-gold);
     letter-spacing: 0.15em;
   }
-
-  /* TOAST */
-  .toast {
-    position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: rgba(13,26,18,0.97);
-    border: 1px solid rgba(201,168,76,0.3);
-    color: var(--cream);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    padding: 14px 24px;
-    z-index: 9999;
-    pointer-events: none;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    opacity: 0;
-    white-space: nowrap;
-    backdrop-filter: blur(8px);
-  }
-
-  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-  .toast.error { border-color: rgba(192,57,43,0.5); color: var(--red); }
 
   /* LOADING OVERLAY */
   .loading-overlay {
     position: fixed;
     inset: 0;
-    background: var(--dark);
+    background: var(--color-bg);
     z-index: 9998;
     display: flex;
     flex-direction: column;
@@ -733,8 +579,8 @@
   .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(201,168,76,0.15);
-    border-top-color: var(--gold);
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-gold);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -742,12 +588,11 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .loading-text {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.85rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.5);
+    color: var(--color-muted);
   }
 
   /* LOCKED STATE */
@@ -765,23 +610,22 @@
 
   .locked-banner {
     display: none;
-    background: rgba(201,168,76,0.08);
-    border-bottom: 1px solid rgba(201,168,76,0.2);
+    background: rgba(201,168,76,0.1);
+    border-bottom: 1px solid var(--color-border);
     padding: 10px 24px;
     text-align: center;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.8rem;
-    font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--color-gold);
   }
 
   body.round-locked .locked-banner { display: block; }
 
   /* RESPONSIVE */
   @media (max-width: 640px) {
-    nav { padding: 14px 20px; }
+    nav { padding: 12px 16px; }
     .page { padding-left: 16px; padding-right: 16px; }
     .leaderboard { padding: 8px 16px; }
     .hole-header { padding: 14px 16px; }
@@ -1821,33 +1665,33 @@
 <div class="toast" id="toast"></div>
 
 <!-- HiO Full-Screen Overlay -->
-<div id="hioOverlay" style="display:none;position:fixed;inset:0;background:rgba(13,26,18,0.97);z-index:99999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
+<div id="hioOverlay" style="display:none;position:fixed;inset:0;background:var(--color-green);z-index:99999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
   <div style="font-size:5rem;animation:hio-pulse 0.8s infinite;">⛳</div>
-  <h1 style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--gold);margin:16px 0 8px;letter-spacing:0.05em;">HOLE IN ONE!</h1>
-  <p id="hioName" style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--green-bright);letter-spacing:0.1em;margin-bottom:8px;"></p>
-  <p style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.15em;">+44 POINTS</p>
-  <button onclick="document.getElementById('hioOverlay').style.display='none'" style="margin-top:32px;font-family:'Bebas Neue',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;background:transparent;border:1.5px solid rgba(201,168,76,0.4);color:rgba(245,240,232,0.5);padding:10px 28px;cursor:pointer;">Dismiss</button>
+  <h1 style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--color-gold);margin:16px 0 8px;letter-spacing:0.05em;">HOLE IN ONE!</h1>
+  <p id="hioName" style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#ffffff;letter-spacing:0.1em;margin-bottom:8px;"></p>
+  <p style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--color-gold);letter-spacing:0.15em;">+44 POINTS</p>
+  <button onclick="document.getElementById('hioOverlay').style.display='none'" style="margin-top:32px;font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.15em;text-transform:uppercase;background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.6);padding:10px 28px;border-radius:4px;cursor:pointer;">Dismiss</button>
 </div>
 
 <!-- Vote Prompt -->
-<div id="votePrompt" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--dark);border:1.5px solid var(--gold);border-radius:8px;padding:20px 24px;max-width:420px;width:90%;z-index:9000;flex-direction:column;gap:14px;align-items:center;text-align:center;">
-  <p id="voteText" style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--cream);line-height:1.5;"></p>
+<div id="votePrompt" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--color-bg);border:1.5px solid var(--color-gold);border-radius:8px;padding:20px 24px;max-width:420px;width:90%;z-index:9000;flex-direction:column;gap:14px;align-items:center;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
+  <p id="voteText" style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--color-text);line-height:1.5;"></p>
   <div style="display:flex;gap:10px;">
-    <button onclick="castVote(true)"  style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;background:var(--green-mid);color:var(--cream);border:none;padding:12px;border-radius:4px;cursor:pointer;">HIT ✓</button>
-    <button onclick="castVote(false)" style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;background:#8B2020;color:var(--cream);border:none;padding:12px;border-radius:4px;cursor:pointer;">MISS ✗</button>
+    <button onclick="castVote(true)"  style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;background:var(--color-green);color:#ffffff;border:none;padding:12px;border-radius:4px;cursor:pointer;">HIT ✓</button>
+    <button onclick="castVote(false)" style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.05em;background:var(--color-error);color:#ffffff;border:none;padding:12px;border-radius:4px;cursor:pointer;">MISS ✗</button>
   </div>
   <input type="hidden" id="votePiPlayerIndex">
   <input type="hidden" id="votePiHoleNumber">
 </div>
 
 <!-- Identity Modal -->
-<div id="identityModal" style="display:none;position:fixed;inset:0;background:rgba(13,26,18,0.96);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
-  <div style="background:rgba(27,61,42,0.4);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:40px;max-width:420px;width:100%;text-align:center;">
-    <p style="font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--green-bright);margin-bottom:8px;">Joining Round</p>
-    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold);margin-bottom:8px;">Who Are You?</h2>
-    <p style="font-family:'DM Sans',sans-serif;font-size:0.85rem;color:rgba(245,240,232,0.5);margin-bottom:24px;">Select your name to claim your player slot.</p>
+<div id="identityModal" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.92);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px);">
+  <div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:12px;padding:40px;max-width:420px;width:100%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.1);">
+    <p style="font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--color-gold);margin-bottom:8px;">Joining Round</p>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--color-green);margin-bottom:8px;">Who Are You?</h2>
+    <p style="font-family:'DM Sans',sans-serif;font-size:0.85rem;color:var(--color-muted);margin-bottom:24px;">Select your name to claim your player slot.</p>
     <div id="identityPlayerList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
-    <button id="identityWatchBtn" style="background:transparent;border:1px solid rgba(245,240,232,0.2);color:rgba(245,240,232,0.4);font-family:'Bebas Neue',sans-serif;font-size:0.8rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;padding:10px 20px;cursor:pointer;border-radius:4px;width:100%;">Watch Only</button>
+    <button id="identityWatchBtn" style="background:transparent;border:1.5px solid var(--color-border);color:var(--color-muted);font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;padding:10px 20px;cursor:pointer;border-radius:4px;width:100%;transition:border-color 0.15s;">Watch Only</button>
   </div>
 </div>
 
@@ -1855,19 +1699,19 @@
   @keyframes hio-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
   .not-mine { opacity: 0.4; pointer-events: none; }
   .awaiting-vote-banner {
-    font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
-    color: var(--gold); padding: 8px 12px;
+    font-family: var(--font-body); font-size: 0.82rem;
+    color: var(--color-gold); padding: 8px 12px;
     background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3);
     border-radius: 4px; margin-top: 6px;
   }
   .identity-player-btn {
-    width: 100%; padding: 14px; font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    background: rgba(45,122,79,0.2); border: 1.5px solid rgba(201,168,76,0.4);
-    color: var(--cream); cursor: pointer; border-radius: 4px;
-    transition: background 0.2s, border-color 0.2s;
+    width: 100%; padding: 14px; font-family: var(--font-display);
+    font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--color-green-tint); border: 1.5px solid var(--color-border);
+    color: var(--color-text); cursor: pointer; border-radius: 4px;
+    transition: background 0.15s, border-color 0.15s;
   }
-  .identity-player-btn:hover { background: rgba(45,122,79,0.4); border-color: var(--gold); }
+  .identity-player-btn:hover { background: rgba(27,61,42,0.12); border-color: var(--color-green); color: var(--color-green); }
 </style>
 
 </body>

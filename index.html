@@ -9,54 +9,26 @@
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
 <style>
-  /* Dark-world token aliases */
-  :root {
-    --dark:         #0d1a12;
-    --green:        var(--color-green);
-    --green-mid:    #2d7a4f;
-    --green-bright: #3ddc84;
-    --gold:         var(--color-gold);
-    --gold-light:   #f0d080;
-    --cream:        var(--color-bg-cream);
-    --red:          var(--color-error);
-    --white:        #ffffff;
-  }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html { scroll-behavior: smooth; }
 
   body {
-    background: var(--dark);
-    color: var(--cream);
+    background: var(--color-bg);
+    color: var(--color-text);
     font-family: var(--font-body);
     overflow-x: hidden;
   }
 
-  /* NOISE TEXTURE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0.4;
-  }
-
-  /* HERO */
+  /* HERO — dark green panel, full bleed */
   .hero {
     min-height: 100vh;
     position: relative;
     display: flex;
     align-items: center;
     overflow: hidden;
-    background: radial-gradient(ellipse at 30% 50%, rgba(29, 74, 46, 0.5) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 20%, rgba(201, 168, 76, 0.1) 0%, transparent 50%),
-                var(--dark);
+    background: var(--color-green);
   }
 
-  /* Animated fairway lines */
   .hero-bg {
     position: absolute;
     inset: 0;
@@ -66,15 +38,13 @@
   .fairway-line {
     position: absolute;
     bottom: 0;
-    width: 2px;
-    background: linear-gradient(to top, rgba(45,122,79,0.4), transparent);
+    width: 1px;
+    background: linear-gradient(to top, rgba(201,168,76,0.18), transparent);
     animation: fairwayRise 3s ease-out forwards;
     opacity: 0;
   }
 
-  @keyframes fairwayRise {
-    to { opacity: 1; }
-  }
+  @keyframes fairwayRise { to { opacity: 1; } }
 
   .hero-content {
     position: relative;
@@ -86,36 +56,33 @@
   }
 
   .hero-eyebrow {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.8rem;
-    font-weight: 700;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: var(--green-bright);
+    color: var(--color-gold);
     margin-bottom: 24px;
     opacity: 0;
     animation: fadeUp 0.8s 0.3s forwards;
   }
 
   .hero-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(6rem, 15vw, 14rem);
     line-height: 0.85;
-    color: var(--gold);
-    text-shadow: 0 0 80px rgba(201,168,76,0.3);
+    color: #ffffff;
     opacity: 0;
     animation: fadeUp 0.8s 0.5s forwards;
   }
 
-  .hero-title .four { color: var(--green-bright); }
+  .hero-title .four { color: var(--color-gold); }
 
   .hero-subtitle {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(1.2rem, 3vw, 2rem);
-    font-weight: 700;
     letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: var(--cream);
+    color: rgba(255,255,255,0.7);
     margin-top: 16px;
     opacity: 0;
     animation: fadeUp 0.8s 0.7s forwards;
@@ -123,15 +90,15 @@
 
   .hero-tagline {
     font-size: 1.1rem;
-    color: var(--cream);
+    color: rgba(255,255,255,0.75);
     opacity: 0;
     animation: fadeUp 0.8s 0.9s forwards;
     max-width: 480px;
     margin-top: 24px;
-    line-height: 1.6;
+    line-height: 1.7;
   }
 
-  .hero-tagline strong { color: var(--gold); }
+  .hero-tagline strong { color: var(--color-gold); }
 
   .hero-cta {
     display: flex;
@@ -142,11 +109,10 @@
     flex-wrap: wrap;
   }
 
-  .btn-primary {
-    background: var(--gold);
-    color: var(--dark);
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 900;
+  .btn-hero-primary {
+    background: var(--color-gold);
+    color: var(--color-green);
+    font-family: var(--font-display);
     font-size: 1rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -159,26 +125,26 @@
     clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
   }
 
-  .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); }
+  .btn-hero-primary:hover { background: #e8c96a; transform: translateY(-2px); }
 
-  .btn-secondary {
+  .btn-hero-secondary {
     background: transparent;
-    color: var(--cream);
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 700;
+    color: rgba(255,255,255,0.8);
+    font-family: var(--font-display);
     font-size: 1rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     padding: 16px 40px;
-    border: 1px solid rgba(245,240,232,0.3);
+    border: 1px solid rgba(255,255,255,0.3);
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
     transition: border-color 0.2s, color 0.2s;
   }
 
-  .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-hero-secondary:hover { border-color: var(--color-gold); color: var(--color-gold); }
 
+  /* Hero score preview */
   .hero-score-preview {
     position: absolute;
     right: 48px;
@@ -189,22 +155,21 @@
   }
 
   .score-card-mini {
-    background: rgba(13,26,18,0.9);
-    border: 1px solid rgba(201,168,76,0.3);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(201,168,76,0.4);
     padding: 24px;
     width: 280px;
     backdrop-filter: blur(10px);
   }
 
   .score-card-mini h4 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.7rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--color-gold);
     margin-bottom: 16px;
-    border-bottom: 1px solid rgba(201,168,76,0.2);
+    border-bottom: 1px solid rgba(201,168,76,0.25);
     padding-bottom: 8px;
   }
 
@@ -213,91 +178,78 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    font-family: 'Bebas Neue', sans-serif;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-family: var(--font-display);
     font-size: 0.9rem;
   }
 
-  .score-row .player { font-weight: 600; color: var(--cream); }
-  .score-row .hdcp { font-size: 0.7rem; color: rgba(245,240,232,0.4); }
-  .score-row .pts { font-weight: 900; color: var(--gold); font-size: 1.1rem; }
+  .score-row .player { color: rgba(255,255,255,0.9); }
+  .score-row .hdcp { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
+  .score-row .pts { color: var(--color-gold); font-size: 1.1rem; }
 
   .hole-in-one-badge {
     margin-top: 12px;
     background: rgba(201,168,76,0.15);
-    border: 1px solid var(--gold);
+    border: 1px solid var(--color-gold);
     padding: 8px 12px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.75rem;
-    font-weight: 700;
     letter-spacing: 0.1em;
-    color: var(--gold);
+    color: var(--color-gold);
     text-align: center;
     animation: pulse 2s 2s infinite;
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes fadeIn {
-    to { opacity: 1; }
-  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { to { opacity: 1; } }
 
   /* PHILOSOPHY STRIP */
   .philosophy-strip {
-    background: var(--green);
-    padding: 20px 48px;
+    background: var(--color-green);
+    padding: 18px 48px;
     display: flex;
     gap: 48px;
     overflow: hidden;
-    border-top: 2px solid var(--gold);
-    border-bottom: 2px solid var(--gold);
+    border-top: 2px solid var(--color-gold);
+    border-bottom: 2px solid var(--color-gold);
   }
 
   .philosophy-strip span {
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 700;
+    font-family: var(--font-display);
     font-size: 0.85rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--gold-light);
+    color: rgba(255,255,255,0.8);
     white-space: nowrap;
     flex-shrink: 0;
   }
 
-  .philosophy-strip .separator { color: var(--green-bright); opacity: 0.6; }
+  .philosophy-strip .separator { color: var(--color-gold); opacity: 0.5; }
 
-  /* SECTIONS */
+  /* SHARED SECTION STYLES */
   section { position: relative; }
 
   .section-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.75rem;
-    font-weight: 700;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: var(--green-bright);
+    color: var(--color-green);
     margin-bottom: 12px;
   }
 
   .section-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: clamp(2.5rem, 5vw, 4rem);
     line-height: 1;
-    color: var(--gold);
+    color: var(--color-green);
   }
 
-  /* LAYERS SECTION */
+  /* HOW IT WORKS */
   #how-it-works {
     padding: 120px 48px;
-    background: linear-gradient(to bottom, var(--dark), #0f2318);
+    background: var(--color-bg-cream);
   }
 
   .layers-intro {
@@ -307,47 +259,46 @@
 
   .layers-intro p {
     margin-top: 20px;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     line-height: 1.7;
-    color: rgba(245,240,232,0.8);
+    color: var(--color-muted);
   }
 
   .layers-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
+    gap: 1px;
+    background: var(--color-border);
   }
 
   .layer-card {
-    background: rgba(45,122,79,0.08);
-    border: 1px solid rgba(201,168,76,0.15);
+    background: var(--color-bg);
+    border: none;
     padding: 40px 32px;
     position: relative;
     overflow: hidden;
-    transition: background 0.3s, border-color 0.3s;
+    transition: background 0.2s;
     cursor: default;
   }
 
   .layer-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     height: 3px;
-    background: var(--gold);
+    background: var(--color-gold);
     transform: scaleX(0);
     transition: transform 0.3s;
     transform-origin: left;
   }
 
-  .layer-card:hover { background: rgba(45,122,79,0.18); border-color: rgba(201,168,76,0.4); }
+  .layer-card:hover { background: var(--color-bg-subtle); }
   .layer-card:hover::before { transform: scaleX(1); }
 
   .layer-number {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 5rem;
-    color: rgba(201,168,76,0.1);
+    color: rgba(27,61,42,0.06);
     position: absolute;
     right: 16px;
     top: 8px;
@@ -355,19 +306,18 @@
   }
 
   .layer-tag {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.7rem;
-    font-weight: 700;
     letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: var(--green-bright);
+    color: var(--color-gold);
     margin-bottom: 12px;
   }
 
   .layer-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.4rem;
-    color: var(--gold);
+    color: var(--color-green);
     margin-bottom: 16px;
     line-height: 1.1;
   }
@@ -375,13 +325,13 @@
   .layer-desc {
     font-size: 0.9rem;
     line-height: 1.6;
-    color: rgba(245,240,232,0.7);
+    color: var(--color-muted);
   }
 
-  /* SCORING TABLE */
+  /* SCORING */
   #scoring {
     padding: 120px 48px;
-    background: #0f2318;
+    background: var(--color-bg);
   }
 
   .scoring-layout {
@@ -397,134 +347,113 @@
   }
 
   .score-table th {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.75rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--color-green);
     text-align: left;
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(201,168,76,0.3);
+    border-bottom: 2px solid var(--color-border);
   }
 
   .score-table td {
     padding: 14px 16px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
   }
 
-  .score-table tr:hover td { background: rgba(45,122,79,0.1); }
+  .score-table tr:hover td { background: var(--color-green-tint); }
 
-  .pts-value {
-    font-weight: 900;
-    font-size: 1.2rem;
-    color: var(--gold);
-  }
-
-  .pts-albatross { color: #fff; font-size: 1.3rem; }
-  .pts-eagle { color: var(--gold-light); }
-  .pts-birdie { color: var(--gold); }
-  .pts-par { color: var(--green-bright); }
+  .pts-value { font-size: 1.2rem; color: var(--color-gold); }
+  .pts-albatross { color: var(--color-green); font-size: 1.3rem; font-weight: 700; }
+  .pts-eagle { color: var(--color-gold); }
+  .pts-birdie { color: var(--color-gold); }
+  .pts-par { color: var(--color-green); }
 
   .multiplier-tiers {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     margin-top: 8px;
   }
 
   .tier-card {
-    background: rgba(13,26,18,0.8);
-    border: 1px solid rgba(201,168,76,0.2);
-    padding: 24px 28px;
+    background: var(--color-bg-cream);
+    border: 1px solid var(--color-border);
+    padding: 20px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     transition: border-color 0.2s;
   }
 
-  .tier-card:hover { border-color: var(--gold); }
+  .tier-card:hover { border-color: var(--color-gold); }
 
   .tier-hdcp {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
     letter-spacing: 0.1em;
-    color: rgba(245,240,232,0.6);
+    color: var(--color-muted);
     margin-bottom: 4px;
   }
 
   .tier-label {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.1rem;
-    color: var(--cream);
-  }
-
-  .tier-mult {
-    text-align: right;
-  }
-
-  .tier-mult .normal {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.75rem;
-    color: rgba(245,240,232,0.4);
-    letter-spacing: 0.1em;
+    color: var(--color-text);
   }
 
   .tier-mult .danger {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.8rem;
-    color: var(--gold);
+    color: var(--color-gold);
     display: block;
   }
 
   /* DECLARATIONS */
   #declarations {
     padding: 120px 48px;
-    background: linear-gradient(135deg, var(--dark) 0%, #0f2318 100%);
+    background: var(--color-bg-cream);
   }
 
   .declarations-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
+    gap: 1px;
+    background: var(--color-border);
     margin-top: 60px;
   }
 
   .decl-card {
-    background: rgba(13,26,18,0.9);
-    border: 1px solid rgba(201,168,76,0.12);
+    background: var(--color-bg);
     padding: 36px 32px;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s;
+    transition: background 0.2s;
   }
 
-  .decl-card:hover {
-    background: rgba(29,74,46,0.3);
-    border-color: rgba(201,168,76,0.4);
-    transform: translateY(-4px);
-  }
+  .decl-card:hover { background: var(--color-bg-subtle); transform: none; }
 
   .decl-condition {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 0.65rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--green-bright);
+    color: var(--color-green);
     margin-bottom: 10px;
     display: inline-block;
-    background: rgba(61,220,132,0.1);
+    background: var(--color-green-tint);
     padding: 3px 8px;
+    border-radius: 2px;
   }
 
   .decl-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.3rem;
-    color: var(--gold);
+    color: var(--color-gold);
     margin-bottom: 12px;
     line-height: 1.1;
   }
@@ -532,7 +461,7 @@
   .decl-desc {
     font-size: 0.9rem;
     line-height: 1.6;
-    color: rgba(245,240,232,0.65);
+    color: var(--color-muted);
   }
 
   .risk-bar {
@@ -543,40 +472,40 @@
   }
 
   .risk-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 0.65rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.3);
+    color: var(--color-muted);
     flex-shrink: 0;
   }
 
   .risk-track {
     flex: 1;
     height: 3px;
-    background: rgba(255,255,255,0.1);
+    background: var(--color-border);
     border-radius: 2px;
     overflow: hidden;
   }
 
   .risk-fill {
     height: 100%;
-    background: linear-gradient(to right, var(--green-bright), var(--gold));
+    background: linear-gradient(to right, var(--color-green), var(--color-gold));
     border-radius: 2px;
   }
 
   /* MOMENT BONUSES */
   #moments {
     padding: 120px 48px;
-    background: var(--dark);
+    background: var(--color-bg);
     text-align: center;
   }
 
   .moments-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
+    gap: 1px;
+    background: var(--color-border);
     margin-top: 60px;
     max-width: 1000px;
     margin-left: auto;
@@ -584,57 +513,53 @@
   }
 
   .moment-card {
-    background: rgba(45,122,79,0.07);
-    border: 1px solid rgba(201,168,76,0.12);
+    background: var(--color-bg);
     padding: 40px 24px;
-    transition: all 0.3s;
-    position: relative;
+    transition: background 0.2s;
   }
 
   .moment-card.highlight {
-    background: rgba(201,168,76,0.08);
-    border-color: rgba(201,168,76,0.4);
+    background: var(--color-green);
   }
 
-  .moment-card:hover { background: rgba(45,122,79,0.2); transform: translateY(-6px); }
+  .moment-card:hover { background: var(--color-bg-subtle); }
+  .moment-card.highlight:hover { background: var(--color-green-hover); }
 
-  .moment-emoji {
-    font-size: 2.5rem;
-    margin-bottom: 16px;
-    display: block;
-  }
+  .moment-emoji { font-size: 2.5rem; margin-bottom: 16px; display: block; }
 
   .moment-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 700;
+    font-family: var(--font-display);
     font-size: 1rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--cream);
+    color: var(--color-text);
     margin-bottom: 8px;
   }
 
+  .moment-card.highlight .moment-name { color: #ffffff; }
+
   .moment-pts {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 3rem;
-    color: var(--gold);
+    color: var(--color-gold);
     line-height: 1;
   }
 
-  .moment-card.highlight .moment-pts { color: var(--gold-light); font-size: 4rem; }
+  .moment-card.highlight .moment-pts { font-size: 4rem; }
 
   .moment-note {
     font-size: 0.8rem;
-    color: rgba(245,240,232,0.4);
+    color: var(--color-muted);
     margin-top: 8px;
     line-height: 1.4;
   }
 
+  .moment-card.highlight .moment-note { color: rgba(255,255,255,0.55); }
 
   /* EXAMPLE SCORECARD */
   #scorecard {
     padding: 120px 48px;
-    background: #0f2318;
+    background: var(--color-bg-cream);
   }
 
   .scorecard-wrapper {
@@ -649,58 +574,57 @@
   }
 
   .full-scorecard thead th {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--color-green);
     padding: 12px 14px;
-    background: rgba(13,26,18,0.9);
-    border-bottom: 2px solid rgba(201,168,76,0.3);
+    background: var(--color-bg);
+    border-bottom: 2px solid var(--color-border);
     text-align: left;
     white-space: nowrap;
   }
 
   .full-scorecard td {
-    padding: 11px 14px;
-    font-family: 'Bebas Neue', sans-serif;
+    padding: 10px 14px;
+    font-family: var(--font-display);
     font-size: 0.95rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
   }
 
-  .full-scorecard tr.player-a td { background: rgba(45,122,79,0.07); }
+  .full-scorecard tr.player-a td { background: rgba(27,61,42,0.04); }
   .full-scorecard tr.player-b td { background: rgba(201,168,76,0.04); }
   .full-scorecard tr.player-a:hover td,
-  .full-scorecard tr.player-b:hover td { background: rgba(45,122,79,0.18); }
+  .full-scorecard tr.player-b:hover td { background: var(--color-green-tint); }
 
   .full-scorecard tr.note-row td {
     font-style: italic;
-    font-size: 0.8rem;
-    color: rgba(245,240,232,0.35);
-    padding: 6px 14px 12px;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+    padding: 4px 14px 10px;
     background: transparent;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .hole-num {
-    font-family: 'Bebas Neue', sans-serif;
-    color: var(--gold);
+    font-family: var(--font-display);
+    color: var(--color-gold);
     font-size: 1.1rem;
   }
 
+  .hit-yes { color: var(--color-success); font-weight: 700; }
+  .hit-no  { color: var(--color-error); }
 
-  .hit-yes { color: var(--green-bright); font-weight: 700; }
-  .hit-no { color: var(--red); }
+  td.pts-col { color: var(--color-gold); font-weight: 700; }
+  td.running-col { color: var(--color-green); font-weight: 700; }
 
-  td.pts-col { font-weight: 900; color: var(--gold-light); }
-  td.running-col { font-weight: 900; color: var(--cream); }
+  .special-row { background: rgba(201,168,76,0.1) !important; border-top: 1px solid rgba(201,168,76,0.3); border-bottom: 1px solid rgba(201,168,76,0.3); }
+  .special-row td { color: var(--color-gold) !important; }
 
-  .special-row { background: rgba(201,168,76,0.12) !important; border-top: 1px solid rgba(201,168,76,0.3); border-bottom: 1px solid rgba(201,168,76,0.3); }
-  .special-row td { color: var(--gold-light) !important; }
-
-  /* FINAL SUMMARY TABLE */
+  /* SUMMARY TABLE */
   .summary-table {
     width: 100%;
     border-collapse: collapse;
@@ -708,94 +632,89 @@
   }
 
   .summary-table th {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.75rem;
-    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     padding: 14px 20px;
-    background: rgba(13,26,18,0.9);
-    color: var(--gold);
+    background: var(--color-bg);
+    color: var(--color-green);
     text-align: left;
-    border-bottom: 2px solid rgba(201,168,76,0.3);
+    border-bottom: 2px solid var(--color-border);
   }
 
   .summary-table td {
     padding: 16px 20px;
-    font-family: 'Bebas Neue', sans-serif;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-family: var(--font-display);
+    border-bottom: 1px solid var(--color-border);
     font-size: 1rem;
+    color: var(--color-text);
   }
 
-  .summary-table .winner-row td { font-size: 1.2rem; font-weight: 900; color: var(--gold); }
+  .summary-table .winner-row td { font-size: 1.2rem; color: var(--color-gold); }
 
   /* QUICK REF */
   #quick-ref {
     padding: 120px 48px;
-    background: var(--dark);
+    background: var(--color-bg);
   }
 
   .ref-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
+    gap: 1px;
+    background: var(--color-border);
     margin-top: 60px;
   }
 
   .ref-item {
-    background: rgba(13,26,18,0.8);
-    border: 1px solid rgba(201,168,76,0.1);
-    padding: 24px 28px;
+    background: var(--color-bg);
+    padding: 20px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    transition: border-color 0.2s;
+    transition: background 0.15s;
   }
 
-  .ref-item:hover { border-color: rgba(201,168,76,0.3); }
+  .ref-item:hover { background: var(--color-bg-subtle); }
 
   .ref-term {
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 700;
+    font-family: var(--font-display);
     font-size: 0.9rem;
-    letter-spacing: 0.05em;
-    color: var(--cream);
+    letter-spacing: 0.03em;
+    color: var(--color-text);
   }
 
   .ref-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-weight: 900;
+    font-family: var(--font-display);
     font-size: 1rem;
-    color: var(--gold);
+    color: var(--color-gold);
     text-align: right;
     flex-shrink: 0;
   }
 
   /* FOOTER */
   footer {
-    background: var(--dark);
-    border-top: 1px solid rgba(201,168,76,0.15);
+    background: var(--color-green);
+    border-top: 2px solid var(--color-gold);
     padding: 48px;
     text-align: center;
   }
 
   .footer-logo {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 2.5rem;
-    color: var(--gold);
+    color: var(--color-gold);
     margin-bottom: 12px;
   }
 
-  .footer-logo span { color: var(--green-bright); }
-
   .footer-tagline {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display);
     font-size: 1rem;
-    font-weight: 700;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.3);
+    color: rgba(255,255,255,0.4);
   }
 
   /* RESPONSIVE */
@@ -805,16 +724,13 @@
   }
 
   @media (max-width: 768px) {
-    nav { padding: 16px 24px; }
-    .nav-links { display: none; }
     .hero-content, #how-it-works, #scoring, #declarations, #moments, #scorecard, #quick-ref, footer { padding-left: 24px; padding-right: 24px; }
     .philosophy-strip { padding: 16px 24px; }
     .layers-grid { grid-template-columns: 1fr; }
-    .scoring-layout { grid-template-columns: 1fr; }
+    .scoring-layout { grid-template-columns: 1fr; gap: 48px; }
     .declarations-grid { grid-template-columns: 1fr; }
     .moments-grid { grid-template-columns: repeat(2, 1fr); }
     .ref-grid { grid-template-columns: 1fr; }
-
   }
 </style>
 </head>
@@ -832,8 +748,8 @@
     <p class="hero-subtitle">League · Never Lay Up</p>
     <p class="hero-tagline">Built for how golfers actually play with friends. <strong>The bold shot should always be the right play.</strong> Four independent, stackable scoring layers. One unforgettable round.</p>
     <div class="hero-cta">
-      <a href="#how-it-works" class="btn-primary">How It Works</a>
-      <a href="#quick-ref" class="btn-secondary">Quick Reference</a>
+      <a href="#how-it-works" class="btn-hero-primary">How It Works</a>
+      <a href="#quick-ref" class="btn-hero-secondary">Quick Reference</a>
     </div>
   </div>
 
@@ -911,9 +827,9 @@
     </div>
   </div>
 
-  <div style="margin-top: 48px; padding: 24px 32px; background: rgba(201,168,76,0.07); border-left: 3px solid var(--gold); max-width: 600px;">
-    <p style="font-family: 'Bebas Neue'; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px;">Handicap Head Start</p>
-    <p style="font-size: 0.95rem; line-height: 1.6; color: rgba(245,240,232,0.75);">Each player begins with half their handicap (rounded down) added to their base points total only — never multiplied. An 18 HCP starts with +9 points. The head start keeps the leaderboard close — but a single big moment can flip it instantly.</p>
+  <div style="margin-top: 48px; padding: 24px 32px; background: var(--color-green-tint); border-left: 3px solid var(--color-gold); max-width: 600px;">
+    <p style="font-family: 'Bebas Neue'; font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 8px;">Handicap Head Start</p>
+    <p style="font-size: 0.95rem; line-height: 1.6; color: var(--color-muted);">Each player begins with half their handicap (rounded down) added to their base points total only — never multiplied. An 18 HCP starts with +9 points. The head start keeps the leaderboard close — but a single big moment can flip it instantly.</p>
   </div>
 </section>
 
@@ -925,7 +841,7 @@
 
     <div class="scoring-layout">
       <div>
-        <p style="font-family: 'Bebas Neue'; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-bright); margin-bottom: 24px;">Base Points (Stableford)</p>
+        <p style="font-family: 'Bebas Neue'; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 24px;">Base Points (Stableford)</p>
         <table class="score-table">
           <thead>
             <tr>
@@ -939,14 +855,14 @@
             <tr><td>Eagle</td><td>2 under</td><td class="pts-value pts-eagle">6</td></tr>
             <tr><td>Birdie</td><td>1 under</td><td class="pts-value pts-birdie">4</td></tr>
             <tr><td>Par</td><td>Level</td><td class="pts-value pts-par">2</td></tr>
-            <tr><td>Bogey</td><td>1 over</td><td class="pts-value" style="color: rgba(245,240,232,0.5)">1</td></tr>
-            <tr><td>Double Bogey+</td><td>2+ over</td><td class="pts-value" style="color: rgba(245,240,232,0.25)">0</td></tr>
+            <tr><td>Bogey</td><td>1 over</td><td class="pts-value" style="color: var(--color-muted)">1</td></tr>
+            <tr><td>Double Bogey+</td><td>2+ over</td><td class="pts-value" style="color: var(--color-border)">0</td></tr>
           </tbody>
         </table>
-        <p style="margin-top: 16px; font-size: 0.85rem; color: rgba(245,240,232,0.4); line-height: 1.5; font-style: italic;">The Birdie → Eagle gap is intentional. Going for a par 5 in 2 and making eagle earns disproportionately more than laying up for birdie.</p>
+        <p style="margin-top: 16px; font-size: 0.85rem; color: var(--color-muted); line-height: 1.5; font-style: italic;">The Birdie → Eagle gap is intentional. Going for a par 5 in 2 and making eagle earns disproportionately more than laying up for birdie.</p>
       </div>
       <div>
-        <p style="font-family: 'Bebas Neue'; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-bright); margin-bottom: 24px;">Handicap Multipliers (on declaration hit)</p>
+        <p style="font-family: 'Bebas Neue'; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 24px;">Handicap Multipliers (on declaration hit)</p>
         <div class="multiplier-tiers">
           <div class="tier-card">
             <div>
@@ -976,19 +892,17 @@
             </div>
           </div>
         </div>
-        <p style="margin-top: 16px; font-size: 0.85rem; color: rgba(245,240,232,0.4); line-height: 1.5; font-style: italic;">Pulling it off is remarkable. High handicappers carry bigger multipliers because the margin for error is wider and the courage required is greater.</p>
+        <p style="margin-top: 16px; font-size: 0.85rem; color: var(--color-muted); line-height: 1.5; font-style: italic;">Pulling it off is remarkable. High handicappers carry bigger multipliers because the margin for error is wider and the courage required is greater.</p>
       </div>
     </div>
   </div>
 </section>
 
-</div>
-
 <!-- DECLARATIONS -->
 <section id="declarations">
   <p class="section-label">Layer 2</p>
   <h2 class="section-title">Declarations</h2>
-  <p style="margin-top: 20px; max-width: 560px; font-size: 1rem; line-height: 1.7; color: rgba(245,240,232,0.7);">Before any shot, call your intent. Must be declared before leaving the tee box — the app locks declarations at 20m GPS movement. No changes after lock. No declaration, no multiplier.</p>
+  <p style="margin-top: 20px; max-width: 560px; font-size: 1rem; line-height: 1.7; color: var(--color-muted);">Before any shot, call your intent. Must be declared before leaving the tee box — the app locks declarations at 20m GPS movement. No changes after lock. No declaration, no multiplier.</p>
 
   <div class="declarations-grid">
     <div class="decl-card">
@@ -1036,10 +950,10 @@
         <div class="risk-track"><div class="risk-fill" style="width: 50%"></div></div>
       </div>
     </div>
-    <div class="decl-card" style="background: rgba(201,168,76,0.05); border-color: rgba(201,168,76,0.2);">
-      <span class="decl-condition" style="background: rgba(201,168,76,0.15); color: var(--gold)">Miss Rule</span>
-      <h3 class="decl-name" style="color: rgba(245,240,232,0.6)">Failed Declaration</h3>
-      <p class="decl-desc">Declaration missed → earn base points + <strong style="color: var(--gold)">+0.5 consolation</strong>. No multiplier. Double bogey+ with a miss = 0 base + 0.5 = 0.5 pts total.</p>
+    <div class="decl-card" style="background: rgba(201,168,76,0.06);">
+      <span class="decl-condition" style="background: rgba(201,168,76,0.15); color: var(--color-gold)">Miss Rule</span>
+      <h3 class="decl-name">Failed Declaration</h3>
+      <p class="decl-desc">Declaration missed → earn base points + <strong style="color: var(--color-gold)">+0.5 consolation</strong>. No multiplier. Double bogey+ with a miss = 0 base + 0.5 = 0.5 pts total.</p>
       <div class="risk-bar">
         <span class="risk-label">Consolation</span>
         <div class="risk-track"><div class="risk-fill" style="width: 100%; background: var(--gold)"></div></div>
@@ -1052,7 +966,7 @@
 <section id="moments">
   <p class="section-label">Layer 4</p>
   <h2 class="section-title">Moment Bonuses</h2>
-  <p style="margin-top: 20px; max-width: 520px; margin-left: auto; margin-right: auto; font-size: 1rem; line-height: 1.7; color: rgba(245,240,232,0.7);">Flat bonuses for the plays nobody forgets. Added on top of all other scoring. Never multiplied — not by declarations, not by handicap tier.</p>
+  <p style="margin-top: 20px; max-width: 520px; margin-left: auto; margin-right: auto; font-size: 1rem; line-height: 1.7; color: var(--color-muted);">Flat bonuses for the plays nobody forgets. Added on top of all other scoring. Never multiplied — not by declarations, not by handicap tier.</p>
 
   <div class="moments-grid">
     <div class="moment-card highlight">
@@ -1082,9 +996,9 @@
   
   </div>
 
-  <div style="margin-top: 48px; display: inline-block; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3); padding: 24px 48px;">
-    <p style="font-family: 'Bebas Neue'; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: rgba(245,240,232,0.5); margin-bottom: 4px; text-transform: uppercase;">Maximum single-hole score</p>
-    <p style="font-family: 'Bebas Neue'; font-size: 2.5rem; color: var(--gold);">Albatross (10) × 2.0× + HiO (44) = <span style="color: var(--gold-light)">64 pts</span></p>
+  <div style="margin-top: 48px; display: inline-block; background: var(--color-green-tint); border: 1px solid var(--color-border); padding: 24px 48px;">
+    <p style="font-family: 'Bebas Neue'; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--color-muted); margin-bottom: 4px; text-transform: uppercase;">Maximum single-hole score</p>
+    <p style="font-family: 'Bebas Neue'; font-size: 2.5rem; color: var(--color-green);">Albatross (10) × 2.0× + HiO (44) = <span style="color: var(--color-gold)">64 pts</span></p>
   </div>
 </section>
 
@@ -1092,7 +1006,7 @@
 <section id="scorecard">
   <p class="section-label">Sample Round</p>
   <h2 class="section-title">Marcus vs. Dave</h2>
-  <p style="margin-top: 16px; font-size: 1rem; color: rgba(245,240,232,0.6);">Marcus (Scratch · 1.5×) vs Dave (18 HCP · 2.0×) · Dave starts with +9 head start</p>
+  <p style="margin-top: 16px; font-size: 1rem; color: var(--color-muted);">Marcus (Scratch · 1.5×) vs Dave (18 HCP · 2.0×) · Dave starts with +9 head start</p>
 
   <div class="scorecard-wrapper">
     <table class="full-scorecard">
@@ -1165,25 +1079,25 @@
         <td>Starting Pts</td>
         <td>0</td>
         <td>9</td>
-        <td style="color: rgba(245,240,232,0.5)">Handicap head start (base pts only)</td>
+        <td style="color: var(--color-muted)">Handicap head start (base pts only)</td>
       </tr>
       <tr>
         <td>Base Pts</td>
         <td>28</td>
         <td>8.5</td>
-        <td style="color: rgba(245,240,232,0.5)">Stableford scoring</td>
+        <td style="color: var(--color-muted)">Stableford scoring</td>
       </tr>
       <tr>
         <td>Multiplier Pts</td>
         <td>7.5 added</td>
         <td>4.5 added</td>
-        <td style="color: rgba(245,240,232,0.5)">Declarations rewarded</td>
+        <td style="color: var(--color-muted)">Declarations rewarded</td>
       </tr>
       <tr>
         <td>Moment Pts</td>
         <td>44</td>
         <td>5</td>
-        <td style="color: rgba(245,240,232,0.5)">Hole in one +44 for Marcus; chip-in +2 &amp; sand save +3 for Dave</td>
+        <td style="color: var(--color-muted)">Hole in one +44 for Marcus; chip-in +2 &amp; sand save +3 for Dave</td>
       </tr>
       <tr class="winner-row">
         <td>FINAL SCORE</td>
@@ -1194,8 +1108,8 @@
     </tbody>
   </table>
 
-  <div style="margin-top: 32px; padding: 24px 32px; background: rgba(13,26,18,0.8); border-left: 3px solid var(--gold); max-width: 640px;">
-    <p style="font-size: 1rem; line-height: 1.7; color: rgba(245,240,232,0.75); font-style: italic;">"The hole-in-one on hole 6 wasn't just a score of 1. It was 50 points and a moment nobody in the group will ever forget."</p>
+  <div style="margin-top: 32px; padding: 24px 32px; background: var(--color-bg-subtle); border-left: 3px solid var(--color-gold); max-width: 640px;">
+    <p style="font-size: 1rem; line-height: 1.7; color: var(--color-muted); font-style: italic;">"The hole-in-one on hole 6 wasn't just a score of 1. It was 50 points and a moment nobody in the group will ever forget."</p>
   </div>
 </section>
 
@@ -1203,7 +1117,7 @@
 <section id="quick-ref">
   <p class="section-label">On-Course</p>
   <h2 class="section-title">Quick Reference</h2>
-  <p style="margin-top: 16px; font-size: 0.9rem; color: rgba(245,240,232,0.5);">Everything you need on the course.</p>
+  <p style="margin-top: 16px; font-size: 0.9rem; color: var(--color-muted);">Everything you need on the course.</p>
 
   <div class="ref-grid">
     <div class="ref-item"><span class="ref-term">Albatross</span><span class="ref-val">10 pts</span></div>
@@ -1228,7 +1142,7 @@
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-logo">4<span>FORE</span></div>
+  <div class="footer-logo">4FORE LEAGUE</div>
   <p class="footer-tagline">Never Lay Up · The Bold Shot Is Always The Right Play</p>
 </footer>
 
